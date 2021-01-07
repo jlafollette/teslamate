@@ -16,7 +16,12 @@ LINK: [github.com/gaussmeter/gaussmeter](https://github.com/gaussmeter/gaussmete
 
 ## [TeslaMateAgile](https://github.com/MattJeanes/TeslaMateAgile)
 
-A TeslaMate Octopus Agile integration. This app will automatically update your cost for charge sessions in TeslaMate within a specified geofence (usually home) using data from the [Octopus Agile](https://octopus.energy/agile/) tariff.
+A TeslaMate integration for calculating cost of charges. This app will automatically update your cost for charge sessions in TeslaMate within a specified geofence (usually home) using data from either the [Octopus Agile](https://octopus.energy/agile/) or [Tibber](https://tibber.com/en/) tariff.
 
 LINK: [github.com/MattJeanes/TeslaMateAgile](https://github.com/MattJeanes/TeslaMateAgile)
 
+## [TeslaMate_Telegram_Bot](https://github.com/JakobLichterfeld/TeslaMate_Telegram_Bot)
+
+This is a telegram bot written in Python to notify by Telegram message when a new SW update for your Tesla is available. It uses the MQTT topic which TeslaMate offers.
+
+LINK: [github.com/JakobLichterfeld/TeslaMate_Telegram_Bot](https://github.com/JakobLichterfeld/TeslaMate_Telegram_Bot))

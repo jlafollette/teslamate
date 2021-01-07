@@ -55,6 +55,10 @@ defmodule TeslaMate.ApiTest do
          send(pid, {TeslaApi.Auth, {:login, email, password}})
          {:ok, %TeslaApi.Auth{token: "$token", refresh_token: "$token", expires_in: 10_000_000}}
        end,
+       legacy_login: fn email, password ->
+         send(pid, {TeslaApi.Auth, {:legacy_login, email, password}})
+         {:ok, %TeslaApi.Auth{token: "$token", refresh_token: "$token", expires_in: 10_000_000}}
+       end,
        refresh: fn
          %{token: "cannot_be_refreshed", refresh_token: "cannot_be_refreshed"} = auth ->
            send(pid, {TeslaApi.Auth, {:refresh, auth}})
@@ -140,6 +144,23 @@ defmodule TeslaMate.ApiTest do
       end
     end
 
+    test "uses legacy login", %{test: name} do
+      with_mocks [auth_mock(self()), vehicle_mock(self())] do
+        :ok = start_api(name, tokens: nil)
+
+        assert false == Api.signed_in?(name)
+
+        assert :ok = Api.sign_in(name, %Credentials{@valid_credentials | use_legacy_auth: true})
+
+        assert_receive {TeslaApi.Auth, {:legacy_login, "teslamate", "foo"}}
+        assert_receive {AuthMock, {:save, %TeslaApi.Auth{}}}
+        assert_receive {VehiclesMock, :restart}
+        assert true == Api.signed_in?(name)
+
+        refute_receive _
+      end
+    end
+
     test "fails if already signed in", %{test: name} do
       with_mocks [auth_mock(self()), vehicle_mock(self())] do
         :ok = start_api(name, tokens: @valid_tokens)
@@ -161,7 +182,9 @@ defmodule TeslaMate.ApiTest do
 
       with_mock TeslaApi.Auth, login: login do
         :ok = start_api(name, start_auth: false)
-        assert {:error, :unauthorized} = Api.sign_in(name, @valid_credentials)
+
+        assert {:error, %TeslaApi.Error{reason: :unauthorized}} =
+                 Api.sign_in(name, @valid_credentials)
       end
     end
   end

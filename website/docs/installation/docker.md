@@ -88,3 +88,11 @@ This setup is recommended only if you are running TeslaMate **on your home netwo
 2. Sign in with your Tesla account
 3. The Grafana dashboards are available at [http://your-ip-address:3000](http://localhost:3000).
 
+## [Update](../upgrading.mdx)
+
+To update the running TeslaMate configuration to the latest version, run the following commands:
+
+```bash
+docker-compose pull
+docker-compose up -d
+```
