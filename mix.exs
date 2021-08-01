@@ -45,8 +45,7 @@ defmodule TeslaMate.MixProject do
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:gen_state_machine, "~> 2.0"},
-      {:ecto_enum, "~> 1.0"},
+      {:gen_state_machine, "~> 3.0"},
       {:phoenix_live_view, "~> 0.1"},
       {:floki, "~> 0.23"},
       {:tortoise, "~> 0.9.4"},
@@ -59,9 +58,9 @@ defmodule TeslaMate.MixProject do
       {:nimble_csv, "~> 1.1"},
       {:timex, "~> 3.0"},
       {:websockex, "~> 0.4"},
-      {:tzdata, "~> 1.0"},
+      {:tzdata, "~> 1.1"},
       {:finch, "~> 0.3"},
-      {:tesla, "~> 1.3"}
+      {:tesla, "~> 1.4"}
     ]
   end
 

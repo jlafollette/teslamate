@@ -1,11 +1,14 @@
-FROM elixir:1.11.2-alpine AS builder
+FROM elixir:1.12 AS builder
 
-RUN apk add --update --no-cache nodejs npm git build-base && \
-    mix local.rebar --force && \
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
+    apt-get update && apt-get install -y --no-install-recommends nodejs
+
+RUN mix local.rebar --force && \
     mix local.hex --force
 
 ENV MIX_ENV=prod
-
 WORKDIR /opt/app
 
 COPY mix.exs mix.lock ./
@@ -19,38 +22,48 @@ COPY assets/package.json assets/package-lock.json ./assets/
 RUN npm ci --prefix ./assets --progress=false --no-audit --loglevel=error
 
 COPY assets assets
-RUN npm run deploy --prefix ./assets
-RUN mix phx.digest
+RUN npm run deploy --prefix ./assets && \
+    mix phx.digest
 
-COPY config/runtime.exs config/runtime.exs
 COPY lib lib
 COPY priv/repo/migrations priv/repo/migrations
 COPY priv/gettext priv/gettext
 COPY grafana/dashboards grafana/dashboards
 COPY VERSION VERSION
+RUN mix compile
 
-RUN mkdir -p /opt/built && \
-    mix "do" compile, release --path /opt/built
+COPY config/runtime.exs config/runtime.exs
+RUN mix release --path /opt/built
 
 ########################################################################
 
-FROM alpine:3.12.3 AS app
+FROM debian:buster-slim AS app
 
 ENV LANG=C.UTF-8 \
     SRTM_CACHE=/opt/app/.srtm_cache \
     HOME=/opt/app
 
-RUN apk add --no-cache ncurses-libs openssl tini tzdata
-
 WORKDIR $HOME
-RUN chown -R nobody:nobody .
-USER nobody:nobody
 
-COPY --chown=nobody:nobody entrypoint.sh /
-COPY --from=builder --chown=nobody:nobody /opt/built .
-RUN mkdir .srtm_cache
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libodbc1  \
+        libsctp1  \
+        libssl1.1  \
+        libstdc++6 \
+        netcat \
+        tini  \
+        tzdata && \
+    rm -rf /var/lib/apt/lists/* && \
+    addgroup --gid 10001 --system nonroot && \
+    adduser  --uid 10000 --system --ingroup nonroot --home /home/nonroot nonroot && \
+    chown -R nonroot:nonroot .
+
+USER nonroot:nonroot
+COPY --chown=nonroot:nonroot entrypoint.sh /
+COPY --from=builder --chown=nonroot:nonroot /opt/built .
+RUN mkdir $SRTM_CACHE
 
 EXPOSE 4000
 
-ENTRYPOINT ["/sbin/tini", "--", "/bin/sh", "/entrypoint.sh"]
+ENTRYPOINT ["tini", "--", "/bin/sh", "/entrypoint.sh"]
 CMD ["bin/teslamate", "start"]

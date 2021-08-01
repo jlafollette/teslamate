@@ -80,8 +80,9 @@ services:
       - teslamate-grafana-data:/var/lib/grafana
 
   mosquitto:
-    image: eclipse-mosquitto:1.6
+    image: eclipse-mosquitto:2
     restart: always
+    command: mosquitto -c /mosquitto-no-auth.conf
     ports:
       - 127.0.0.1:1883:1883
     volumes:
@@ -96,6 +97,8 @@ volumes:
 ```
 
 ### .env
+
+This file should reside in the same folder as the docker-compose.yml file.
 
 ```plaintext title=".env"
 TM_DB_USER=teslamate
@@ -181,12 +184,12 @@ Define LOG access.teslamate.log
 
 ### .htpasswd
 
-This file contains a user and password for accessing TeslaMate (Basic-auth), note this is NOT your tesla.com password. You can generate it on the web if you don't have the [Apache tools](https://www.cyberciti.biz/faq/create-update-user-authentication-files/) installed (e.g. http://www.htaccesstools.com/htpasswd-generator/).
+This file contains a user and password for accessing TeslaMate (Basic-auth), note this is NOT your tesla.com password. You can generate it on the web if you don't have the [Apache tools](https://www.cyberciti.biz/faq/create-update-user-authentication-files/) installed (e.g. http://www.htaccesstools.com/htpasswd-generator/). Use BCrypt encryption mode.
 
 **Example:**
 
 ```apacheconf title="/etc/apache2/.htpasswd"
-teslamate:$apr1$0hau3aWq$yzNEh.ABwZBAIEYZ6WfbH/
+teslamate:$2y$10$f7PB3UF3PNzqMIXZmf1dIefOkrv/15Xt6Xw3pzc6mkS/B5qoWBdAG
 ```
 
 ## Usage

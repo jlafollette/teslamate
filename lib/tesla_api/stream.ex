@@ -33,8 +33,8 @@ defmodule TeslaApi.Stream do
     }
 
     WebSockex.start_link(@endpoint_url, __MODULE__, state,
-      socket_connect_timeout: :timer.seconds(6),
-      socket_recv_timeout: :timer.seconds(15),
+      socket_connect_timeout: :timer.seconds(15),
+      socket_recv_timeout: :timer.seconds(30),
       name: :"stream_#{state.vehicle_id}",
       cacerts: @cacerts,
       insecure: false,
@@ -78,7 +78,7 @@ defmodule TeslaApi.Stream do
   end
 
   def handle_info(:timeout, %State{timeouts: t, receiver: receiver} = state) do
-    Logger.log(if(t <= 4, do: :debug, else: :info), "Stream.Timeout / #{inspect(t)}")
+    Logger.debug("Stream.Timeout / #{inspect(t)}")
 
     if match?(%State{last_data: %Data{}}, state) and rem(t, 10) == 4 do
       receiver.(:inactive)
@@ -101,7 +101,7 @@ defmodule TeslaApi.Stream do
 
     case Jason.decode(msg) do
       {:ok, %{"msg_type" => "control:hello", "connection_timeout" => t}} ->
-        Logger.info("control:hello – #{t}")
+        Logger.debug("control:hello – #{t}")
         {:ok, state}
 
       {:ok, %{"msg_type" => "data:update", "tag" => ^tag, "value" => data}}
@@ -118,7 +118,7 @@ defmodule TeslaApi.Stream do
       {:ok, %{"msg_type" => "data:error", "tag" => ^tag, "error_type" => "vehicle_disconnected"}} ->
         case state.disconnects do
           d when d != 0 and rem(d, 10) == 0 ->
-            Logger.warning("Too many disconnects …")
+            Logger.warning("Too many disconnects from streaming API")
 
             cancel_timer(state.timer)
             state.receiver.(:too_many_disconnects)
@@ -147,7 +147,14 @@ defmodule TeslaApi.Stream do
         {:ok, state}
 
       {:ok, %{"msg_type" => "data:error", "tag" => ^tag, "error_type" => "client_error"} = msg} ->
-        raise "Client Error: #{inspect(msg)}"
+        case msg do
+          %{"value" => "owner_api error:" <> _ = error} ->
+            Logger.warn("Streaming API Client Error: #{error}")
+            {:close, state}
+
+          _ ->
+            raise "Client Error: #{inspect(msg)}"
+        end
 
       {:ok, %{"msg_type" => "data:error", "tag" => ^tag, "error_type" => type, "value" => v}} ->
         Logger.error("Error #{inspect(type)}: #{v}")
@@ -169,7 +176,7 @@ defmodule TeslaApi.Stream do
 
     case reason do
       {:local, :normal} ->
-        Logger.info(
+        Logger.debug(
           "Connection was closed (a:#{n}|t:#{state.timeouts}|d:#{state.disconnects}). Reconnecting …"
         )
 

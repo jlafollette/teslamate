@@ -12,7 +12,7 @@ defmodule TeslaMate.Vehicles.Vehicle.Summary do
     plugged_in scheduled_charging_start_time charge_limit_soc charger_power windows_open doors_open
     odometer shift_state charge_port_door_open time_to_full_charge charger_phases
     charger_actual_current charger_voltage version update_available update_version is_user_present geofence
-    model trim_badging exterior_color wheel_type spoiler_type trunk_open frunk_open elevation
+    model trim_badging exterior_color wheel_type spoiler_type trunk_open frunk_open elevation power
   )a
 
   def into(nil, %{state: :start, healthy?: healthy?, car: car}) do
@@ -75,6 +75,7 @@ defmodule TeslaMate.Vehicles.Vehicle.Summary do
       # Drive State
       latitude: get_in_struct(vehicle, [:drive_state, :latitude]),
       longitude: get_in_struct(vehicle, [:drive_state, :longitude]),
+      power: get_in_struct(vehicle, [:drive_state, :power]),
       speed: speed(vehicle),
       shift_state: get_in_struct(vehicle, [:drive_state, :shift_state]),
       heading: get_in_struct(vehicle, [:drive_state, :heading]),
@@ -124,15 +125,9 @@ defmodule TeslaMate.Vehicles.Vehicle.Summary do
   defp speed(_vehicle), do: nil
 
   defp plugged_in(%Vehicle{charge_state: nil}), do: nil
-  defp plugged_in(%Vehicle{vehicle_state: nil}), do: nil
   defp plugged_in(%Vehicle{charge_state: %Charge{charge_port_door_open: :unknown}}), do: :unknown
 
-  defp plugged_in(%Vehicle{charge_state: %Charge{} = c})
-       when c.charge_port_cold_weather_mode in [false, nil] do
-    c.charge_port_latch == "Engaged" and c.charge_port_door_open
-  end
-
-  defp plugged_in(%Vehicle{charge_state: %Charge{charge_port_cold_weather_mode: true} = c}) do
+  defp plugged_in(%Vehicle{charge_state: %Charge{} = c}) do
     c.charging_state != "Disconnected"
   end
 

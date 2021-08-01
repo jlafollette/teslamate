@@ -1,4 +1,4 @@
-FROM grafana/grafana:7.3.6
+FROM grafana/grafana:7.5.10
 
 ENV GF_ANALYTICS_REPORTING_ENABLED=FALSE \
     GF_AUTH_ANONYMOUS_ENABLED=true \
@@ -13,12 +13,15 @@ ENV GF_ANALYTICS_REPORTING_ENABLED=FALSE \
 
 USER root
 
-RUN grafana-cli --pluginsDir "${GF_PATHS_PLUGINS}" plugins install pr0ps-trackmap-panel 2.1.0 && \
-    grafana-cli --pluginsDir "${GF_PATHS_PLUGINS}" plugins install natel-discrete-panel 0.1.0 && \
-    grafana-cli --pluginsDir "${GF_PATHS_PLUGINS}" plugins install grafana-piechart-panel 1.6.1 && \
-    grafana-cli --pluginsDir "${GF_PATHS_PLUGINS}" --pluginUrl https://github.com/panodata/grafana-map-panel/releases/download/0.14.0/grafana-map-panel-0.14.0.zip plugins install grafana-worldmap-panel-ng
+RUN mkdir -p "$GF_PATHS_PLUGINS" && \
+    chown -R grafana "$GF_PATHS_PLUGINS"
 
 USER grafana
+
+RUN grafana-cli --pluginsDir "${GF_PATHS_PLUGINS}" plugins install pr0ps-trackmap-panel 2.1.2 && \
+    grafana-cli --pluginsDir "${GF_PATHS_PLUGINS}" plugins install natel-discrete-panel 0.1.0 && \
+    grafana-cli --pluginsDir "${GF_PATHS_PLUGINS}" plugins install grafana-piechart-panel 1.6.1 && \
+    grafana-cli --pluginsDir "${GF_PATHS_PLUGINS}" --pluginUrl https://github.com/panodata/grafana-map-panel/releases/download/0.15.0/grafana-map-panel-0.15.0.zip plugins install grafana-worldmap-panel-ng
 
 COPY logo.svg /usr/share/grafana/public/img/grafana_icon.svg
 COPY favicon.png /usr/share/grafana/public/img/fav32.png

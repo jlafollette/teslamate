@@ -4,6 +4,101 @@ defmodule TeslaMateWeb.SignInLive.Index do
   import Core.Dependency, only: [call: 3]
   alias TeslaMate.{Auth, Api}
 
+  defmodule State.Credentials do
+    import Ecto.Changeset
+
+    defstruct [:changeset]
+
+    def init, do: %__MODULE__{changeset: credentials_changeset()}
+
+    def change(%__MODULE__{} = t, credentials) do
+      changeset =
+        credentials
+        |> credentials_changeset()
+        |> Map.put(:action, :update)
+
+      %__MODULE__{t | changeset: changeset}
+    end
+
+    defp credentials_changeset(attrs \\ %{}) do
+      {%{}, %{email: :string, password: :string}}
+      |> cast(attrs, [:email, :password])
+      |> validate_required([:email, :password])
+    end
+  end
+
+  defmodule State.Captcha do
+    import Ecto.Changeset
+
+    defstruct [:changeset, :captcha, :callback, :prev_state]
+
+    def init(captcha, callback, prev_state) do
+      %__MODULE__{
+        changeset: captcha_changeset(),
+        captcha: captcha,
+        callback: callback,
+        prev_state: prev_state
+      }
+    end
+
+    def change(%__MODULE__{} = t, catpcha) do
+      changeset =
+        catpcha
+        |> captcha_changeset()
+        |> Map.put(:action, :update)
+
+      %__MODULE__{t | changeset: changeset}
+    end
+
+    defp captcha_changeset(attrs \\ %{}) do
+      {%{}, %{code: :string}}
+      |> cast(attrs, [:code])
+      |> validate_required([:code])
+    end
+  end
+
+  defmodule State.MFA do
+    import Ecto.Changeset
+
+    defstruct [:changeset, :devices, :callback]
+
+    def init(devices, callback) do
+      %__MODULE__{changeset: mfa_changeset(), devices: devices, callback: callback}
+    end
+
+    def change(%__MODULE__{} = t, mfa) do
+      changeset =
+        mfa
+        |> mfa_changeset()
+        |> Map.put(:action, :update)
+
+      %__MODULE__{t | changeset: changeset}
+    end
+
+    defp mfa_changeset(attrs \\ %{}) do
+      {%{}, %{passcode: :string, device_id: :string}}
+      |> cast(attrs, [:passcode, :device_id])
+      |> validate_required([:passcode, :device_id])
+      |> validate_length(:passcode, is: 6)
+      |> validate_format(:passcode, ~r/\d{6}/)
+    end
+  end
+
+  defmodule State.Tokens do
+    defstruct [:changeset]
+
+    def init, do: %__MODULE__{changeset: Auth.change_tokens()}
+
+    def change(%__MODULE__{} = t, tokens) do
+      changeset =
+        tokens
+        |> Auth.change_tokens()
+        |> Map.put(:action, :update)
+
+      %__MODULE__{t | changeset: changeset}
+    end
+  end
+
   @impl true
   def mount(_params, %{"locale" => locale}, socket) do
     if connected?(socket), do: Gettext.put_locale(locale)
@@ -11,62 +106,116 @@ defmodule TeslaMateWeb.SignInLive.Index do
     assigns = %{
       api: get_api(socket),
       page_title: gettext("Sign in"),
+      callback: fn _, _, _ -> :error end,
       error: nil,
       task: nil,
-      state: {:credentials, {Auth.change_credentials(), _show_checkbox = false}}
+      state: State.Credentials.init()
     }
 
     {:ok, assign(socket, assigns)}
   end
 
   @impl true
-  def handle_event("validate", %{"credentials" => c}, %{assigns: %{state: {:credentials, d}}} = s) do
-    {_changeset, show_checkbox?} = d
-
-    changeset =
-      c
-      |> Auth.change_credentials()
-      |> Map.put(:action, :update)
-
-    {:noreply, assign(s, state: {:credentials, {changeset, show_checkbox?}}, error: nil)}
-  end
-
-  def handle_event("validate", %{"mfa" => mfa}, %{assigns: %{state: {:mfa, data}}} = socket) do
-    {_changeset, devices, ctx, show_button?} = data
-
-    changeset =
-      mfa
-      |> mfa_changeset()
-      |> Map.put(:action, :update)
-
-    task =
-      if changeset.valid? do
-        %{passcode: passcode, device_id: device_id} = Ecto.Changeset.apply_changes(changeset)
-
-        Task.async(fn ->
-          call(socket.assigns.api, :sign_in, [device_id, passcode, ctx])
-        end)
+  def handle_params(params, _uri, socket) do
+    socket =
+      case params["use_api_tokens"] do
+        "true" -> assign(socket, state: State.Tokens.init())
+        "false" -> assign(socket, state: State.Credentials.init())
+        _ -> socket
       end
 
-    state = {:mfa, {changeset, devices, ctx, show_button?}}
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(
+        "validate",
+        %{"credentials" => credentials},
+        %{assigns: %{state: %State.Credentials{}}} = socket
+      ) do
+    state = State.Credentials.change(socket.assigns.state, credentials)
+    {:noreply, assign(socket, state: state, error: nil)}
+  end
+
+  def handle_event(
+        "validate",
+        %{"tokens" => tokens},
+        %{assigns: %{state: %State.Tokens{}}} = socket
+      ) do
+    state = State.Tokens.change(socket.assigns.state, tokens)
+    {:noreply, assign(socket, state: state, error: nil)}
+  end
+
+  def handle_event(
+        "validate",
+        %{"captcha" => captcha},
+        %{assigns: %{state: %State.Captcha{}}} = socket
+      ) do
+    state = State.Captcha.change(socket.assigns.state, captcha)
+    {:noreply, assign(socket, state: state, error: nil)}
+  end
+
+  def handle_event(
+        "validate",
+        %{"mfa" => mfa},
+        %{assigns: %{state: %State.MFA{}}} = socket
+      ) do
+    state = State.MFA.change(socket.assigns.state, mfa)
+
+    task =
+      if state.changeset.valid? do
+        %{passcode: passcode, device_id: device_id} =
+          Ecto.Changeset.apply_changes(state.changeset)
+
+        Task.async(fn ->
+          state.callback.(device_id, passcode)
+        end)
+      end
 
     {:noreply, assign(socket, state: state, task: task, error: nil)}
   end
 
-  def handle_event("sign_in", _, %{assigns: %{state: {:credentials, {changeset, _}}}} = socket) do
-    credentials = Ecto.Changeset.apply_changes(changeset)
+  def handle_event("sign_in", _, %{assigns: %{state: %State.Credentials{} = state}} = socket) do
+    credentials = Ecto.Changeset.apply_changes(state.changeset)
 
     task =
       Task.async(fn ->
-        call(socket.assigns.api, :sign_in, [credentials])
+        call(socket.assigns.api, :sign_in, [{credentials.email, credentials.password}])
       end)
 
     {:noreply, assign(socket, task: task)}
   end
 
-  def handle_event("use_legacy_login", _params, %{assigns: %{state: {:mfa, _data}}} = socket) do
-    state = {:credentials, {Auth.change_credentials(%{use_legacy_auth: true}), true}}
-    {:noreply, assign(socket, state: state)}
+  def handle_event("sign_in", _, %{assigns: %{state: %State.Tokens{} = state}} = socket) do
+    tokens = Ecto.Changeset.apply_changes(state.changeset)
+
+    task =
+      Task.async(fn ->
+        call(socket.assigns.api, :sign_in, [tokens])
+      end)
+
+    {:noreply, assign(socket, task: task)}
+  end
+
+  def handle_event("sign_in", _, %{assigns: %{state: %State.Captcha{} = state}} = socket) do
+    %{code: captcha_code} = Ecto.Changeset.apply_changes(state.changeset)
+
+    task =
+      Task.async(fn ->
+        state.callback.(captcha_code)
+      end)
+
+    {:noreply, assign(socket, task: task)}
+  end
+
+  def handle_event("use_api_tokens", _params, socket) do
+    path = Routes.live_path(socket, __MODULE__, %{use_api_tokens: true})
+    {:noreply, push_patch(socket, to: path)}
+  end
+
+  def handle_event("use_credentials", _params, socket) do
+    path = Routes.live_path(socket, __MODULE__, %{use_api_tokens: false})
+    {:noreply, push_patch(socket, to: path)}
   end
 
   @impl true
@@ -78,33 +227,59 @@ defmodule TeslaMateWeb.SignInLive.Index do
         Process.sleep(250)
         {:noreply, redirect_to_carlive(socket)}
 
-      {:ok, {:mfa, devices, ctx}} ->
+      {:ok, {:captcha, captcha, callback}} ->
+        credentials_state =
+          case socket.assigns.state do
+            %State.Credentials{} = credentials_state -> credentials_state
+            %State.Captcha{} = captcha_state -> captcha_state.prev_state
+          end
+
+        state = State.Captcha.init(captcha, callback, credentials_state)
+        {:noreply, assign(socket, state: state, task: nil)}
+
+      {:ok, {:mfa, devices, callback}} ->
         devices = Enum.map(devices, fn %{"name" => name, "id" => id} -> {name, id} end)
-        state = {:mfa, {mfa_changeset(), devices, ctx, false}}
+        state = State.MFA.init(devices, callback)
         {:noreply, assign(socket, state: state, task: nil)}
 
       {:error, %TeslaApi.Error{} = e} ->
-        state =
-          case socket.assigns.state do
-            {:credentials, {changeset, _show_checkbox}} ->
-              {:credentials, {changeset, true}}
+        message =
+          case e.reason do
+            :captcha_does_not_match ->
+              gettext("Captcha does not match")
 
-            {:mfa, {changeset, devices, ctx, _show_button}} ->
-              {:mfa, {changeset, devices, ctx, true}}
+            :invalid_credentials ->
+              gettext("Invalid email address and password combination")
+
+            :token_refresh ->
+              gettext("Tokens are invalid")
+
+            :account_locked ->
+              gettext(
+                "Your Tesla account is locked due to too many failed sign in attempts. " <>
+                  "To unlock your account, reset your password"
+              )
+
+            _ ->
+              Exception.message(e)
           end
 
-        {:noreply, assign(socket, state: state, error: Exception.message(e), task: nil)}
+        task =
+          case {socket.assigns.state, e.reason} do
+            {%State.Captcha{prev_state: %State.Credentials{} = prev_state}, reason}
+            when reason in [:captcha_does_not_match, :invalid_credentials] ->
+              credentials = Ecto.Changeset.apply_changes(prev_state.changeset)
+
+              Task.async(fn ->
+                call(socket.assigns.api, :sign_in, [{credentials.email, credentials.password}])
+              end)
+
+            _ ->
+              nil
+          end
+
+        {:noreply, assign(socket, error: message, task: task)}
     end
-  end
-
-  defp mfa_changeset(attrs \\ %{}) do
-    import Ecto.Changeset
-
-    {%{}, %{passcode: :string, device_id: :string}}
-    |> cast(attrs, [:passcode, :device_id])
-    |> validate_required([:passcode, :device_id])
-    |> validate_length(:passcode, is: 6)
-    |> validate_format(:passcode, ~r/\d{6}/)
   end
 
   defp get_api(socket) do

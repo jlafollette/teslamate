@@ -515,8 +515,8 @@ defmodule TeslaMateWeb.SettingsLiveTest do
 
     def github_mock do
       release = %{"tag_name" => "v1.1.3", "prerelease" => false, "draft" => false}
-      resp = %Finch.Response{status: 200, body: Jason.encode!(release)}
-      {TeslaMate.HTTP, [], get: fn _, _ -> {:ok, resp} end}
+      resp = %Tesla.Env{status: 200, body: release}
+      {Tesla.Adapter.Finch, [], call: fn _, _ -> {:ok, resp} end}
     end
 
     test "informs if an update is available", %{conn: conn} do
@@ -540,6 +540,24 @@ defmodule TeslaMateWeb.SettingsLiveTest do
                ] =
                  Floki.find(html, ".footer a")
                  |> Enum.reject(&match?({"a", [_, _, _, _, _], [_, {_, _, ["Donate"]}]}, &1))
+      end
+    end
+  end
+
+  describe "sign-out" do
+    import Mock
+
+    test "tba", %{conn: conn} do
+      with_mocks [{TeslaMate.Api, [], signed_in?: fn -> true end, sign_out: fn -> :ok end}] do
+        assert {:ok, view, _html} = live(conn, "/settings")
+
+        view
+        |> element("button", "Sign out")
+        |> render_click()
+
+        assert_redirect(view, "/")
+
+        assert_called(TeslaMate.Api.sign_out())
       end
     end
   end

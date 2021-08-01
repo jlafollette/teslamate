@@ -1,62 +1,102 @@
 defmodule TeslaMateWeb.SignInLiveTest do
   use TeslaMateWeb.ConnCase
 
-  alias TeslaMate.Auth.Credentials
-
-  test "renders sign in form", %{conn: conn} do
-    assert {:ok, _view, html} = live(conn, "/sign_in")
-
-    assert html =~ ~r(<input .* type="username"/>)
-    assert html =~ ~r(<input .* type="password"/>)
-    assert html =~ ~r(<button .* type="submit" disabled="disabled">Sign in</button>)
-  end
-
-  test "validates credentials", %{conn: conn} do
-    assert {:ok, view, _html} = live(conn, "/sign_in")
-
-    assert html =
-             render_change(view, :validate, %{
-               credentials: %{email: "$email", password: "$password"}
-             })
-
-    assert html =~ ~r(<input .* type="username" value="\$email"/>)
-    assert html =~ ~r(<input .* type="password" value="\$password"/>)
-    assert html =~ ~r(<button .* type="submit">Sign in</button>)
-  end
-
-  defp start_api(name) do
+  defp start_api(name, opts) do
     api_name = :"api_#{name}"
-    {:ok, _pid} = start_supervised({ApiMock, name: api_name, pid: self()})
+
+    {:ok, _pid} =
+      start_supervised({ApiMock, name: api_name, pid: self(), captcha: opts[:captcha]})
+
     %{api: {ApiMock, api_name}}
   end
 
-  test "signs in", %{conn: conn, test: name} do
-    params = start_api(name)
+  setup %{test: name, conn: conn} = ctx do
+    params = start_api(name, captcha: Map.get(ctx, :captcha, true))
+    conn = put_connect_params(conn, params)
+    [conn: conn]
+  end
 
-    assert {:ok, view, _html} =
-             conn
-             |> put_connect_params(params)
-             |> live("/sign_in")
+  @tag captcha: true
+  test "renders sign in form", %{conn: conn} do
+    assert {:ok, _view, html} = live(conn, "/sign_in")
+
+    doc = Floki.parse_document!(html)
+
+    assert [] == Floki.attribute(doc, "[type=username]", "value")
+    assert [] == Floki.attribute(doc, "[type=password]", "value")
+    assert [] == Floki.attribute(doc, "#credentials_captcha", "value")
+
+    assert [
+             {"button",
+              [
+                {"class", _},
+                {"phx-disable-with", "Saving..."},
+                {"type", "submit"},
+                {"disabled", "disabled"}
+              ], ["Sign in"]}
+           ] = doc |> Floki.find("[type=submit]")
+  end
+
+  @tag captcha: false
+  test "validates credentials", %{conn: conn} do
+    assert {:ok, view, _html} = live(conn, "/sign_in")
+
+    assert doc =
+             view
+             |> render_change(:validate, %{credentials: %{email: "$email", password: "$password"}})
+             |> Floki.parse_document!()
+
+    assert ["$email"] == Floki.attribute(doc, "[type=username]", "value")
+    assert ["$password"] == Floki.attribute(doc, "[type=password]", "value")
+    assert "Sign in" == doc |> Floki.find("[type=submit]") |> Floki.text()
+  end
+
+  @tag captcha: false
+  test "signs in", %{conn: conn} do
+    assert {:ok, view, _html} = live(conn, "/sign_in")
 
     render_change(view, :validate, %{credentials: %{email: "$email", password: "$password"}})
     render_submit(view, :sign_in, %{})
 
-    assert_receive {ApiMock, {:sign_in, %Credentials{email: "$email", password: "$password"}}}
+    assert_receive {ApiMock, :sign_in, "$email", "$password"}
+
     assert_redirect(view, "/", 1000)
   end
 
-  test "signs in with second factor", %{conn: conn, test: name} do
-    params = start_api(name)
+  @tag captcha: true
+  test "signs in with captcha", %{conn: conn} do
+    assert {:ok, view, _html} = live(conn, "/sign_in")
 
-    assert {:ok, view, _html} =
-             conn
-             |> put_connect_params(params)
-             |> live("/sign_in")
-
-    render_change(view, :validate, %{credentials: %{email: "mfa", password: "$password"}})
+    render_change(view, :validate, %{credentials: %{email: "captcha", password: "$password"}})
     render_submit(view, :sign_in, %{})
 
-    assert_receive {ApiMock, {:sign_in, %Credentials{email: "mfa", password: "$password"}}}
+    render_change(view, :validate, %{captcha: %{code: "ABCD3f"}})
+
+    doc =
+      view
+      |> render()
+      |> Floki.parse_document!()
+
+    assert [{"span", _, [{"svg", _, []}]}] = Floki.find(doc, "#captcha")
+    assert ["ABCD3f"] == Floki.attribute(doc, "#captcha_code", "value")
+
+    render_submit(view, :sign_in, %{})
+
+    assert_receive {ApiMock, :sign_in_callback, "captcha", "$password", "ABCD3f"}
+    assert_redirect(view, "/", 1000)
+  end
+
+  @tag captcha: true
+  test "signs in with second factor", %{conn: conn} do
+    assert {:ok, view, _html} = live(conn, "/sign_in")
+
+    render_change(view, :validate, %{credentials: %{email: "$email", password: "$password"}})
+    render_submit(view, :sign_in, %{})
+
+    render_change(view, :validate, %{captcha: %{code: "mfa"}})
+    render_submit(view, :sign_in, %{})
+
+    assert_receive {ApiMock, :sign_in_callback, "$email", "$password", "mfa"}
 
     assert [
              {"option", [{"value", "000"}], ["Device #1"]},
@@ -86,76 +126,23 @@ defmodule TeslaMateWeb.SignInLiveTest do
              |> Floki.parse_document!()
              |> Floki.find(".is-loading")
 
-    assert_receive {ApiMock, {:sign_in, "111", "123456", %TeslaApi.Auth.MFA.Ctx{}}}
+    assert_receive {ApiMock, :mfa_callback, ["111", "123456"]}
     assert_redirect(view, "/", 1000)
   end
 
-  test "offers to sign in via the legacy API", %{conn: conn, test: name} do
-    params = start_api(name)
+  test "signs in with api tokens", %{conn: conn} do
+    assert {:ok, view, _html} = live(conn, "/sign_in")
 
-    assert {:ok, view, html} =
-             conn
-             |> put_connect_params(params)
-             |> live("/sign_in")
+    assert view
+           |> element("form button", "Use existing API tokens (advanced)")
+           |> render_click() =~ "Access Token"
 
-    assert [] ==
-             html
-             |> Floki.parse_document!()
-             |> Floki.find("#credentials_use_legacy_auth")
-
-    render_change(view, :validate, %{credentials: %{email: "error", password: "…"}})
-    render_submit(view, :sign_in, %{})
-
-    assert [{"input", [_, _, {"type", "checkbox"}, {"value", "true"}], []}] =
-             view
-             |> render()
-             |> Floki.parse_document!()
-             |> Floki.find("#credentials_use_legacy_auth")
-
-    render_change(view, :validate, %{
-      credentials: %{email: "$email", password: "$password", use_legacy_auth: true}
-    })
-
+    render_change(view, :validate, %{tokens: %{access: "$access", refresh: "$refresh"}})
     render_submit(view, :sign_in, %{})
 
     assert_receive {ApiMock,
-                    {:sign_in,
-                     %Credentials{email: "$email", password: "$password", use_legacy_auth: true}}}
+                    {:sign_in, %TeslaMate.Auth.Tokens{access: "$access", refresh: "$refresh"}}}
 
     assert_redirect(view, "/", 1000)
-  end
-
-  test "offers to sign in via the legacy API if 2FA step failed", %{conn: conn, test: name} do
-    params = start_api(name)
-
-    assert {:ok, view, _html} =
-             conn
-             |> put_connect_params(params)
-             |> live("/sign_in")
-
-    render_change(view, :validate, %{credentials: %{email: "mfa", password: "$password"}})
-    render_submit(view, :sign_in, %{})
-
-    assert_receive {ApiMock, {:sign_in, %Credentials{email: "mfa", password: "$password"}}}
-
-    assert [{"div", _, [{"select", [{"id", "mfa_device_id"} | _], _options}]}] =
-             view
-             |> render_change(:validate, %{mfa: %{device_id: "error", passcode: "999999"}})
-             |> Floki.parse_document!()
-             |> Floki.find(".is-loading")
-
-    assert_receive {ApiMock, {:sign_in, "error", "999999", %TeslaApi.Auth.MFA.Ctx{}}}
-
-    assert [{"button", _, [_icon, " ", {"span", _, ["Use legacy authentication API"]}]}] =
-             view
-             |> render()
-             |> Floki.parse_document!()
-             |> Floki.find("button[phx-click='use_legacy_login']")
-
-    assert [{"input", [_, _, {"type", "checkbox"}, {"value", "true"}, {"checked", "checked"}], _}] =
-             view
-             |> render_click(:use_legacy_login)
-             |> Floki.parse_document!()
-             |> Floki.find("#credentials_use_legacy_auth")
   end
 end

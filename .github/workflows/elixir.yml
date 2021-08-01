@@ -4,15 +4,17 @@ on: [pull_request, push]
 
 jobs:
   mix_test:
-    name: mix test (Elixir ${{ matrix.elixir }} OTP ${{ matrix.otp }})
-
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - elixir: "1.11.1"
-            otp: "23.x"
+          - pair:
+              elixir: "1.12"
+              otp: "24"
+            report_coverage: true
+            lint: true
 
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     services:
       db:
@@ -32,29 +34,36 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v2.3.4
+      - uses: erlef/setup-beam@v1.8.3
+        with:
+          otp-version: ${{ matrix.pair.otp }}
+          elixir-version: ${{ matrix.pair.elixir }}
+      - uses: actions/cache@v2.1.6
         with:
           path: |
             deps
             _build
             priv/cldr/locales
-          key: ${{ runner.os }}-${{ matrix.elixir }}-${{ matrix.otp }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+          key: ${{ runner.os }}-${{ matrix.pair.elixir }}-${{ matrix.pair.otp }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.elixir }}-${{ matrix.otp }}-mix-
-      - uses: actions/setup-elixir@v1
-        with:
-          otp-version: ${{ matrix.otp }}
-          elixir-version: ${{ matrix.elixir }}
+            ${{ runner.os }}-${{ matrix.pair.elixir }}-${{ matrix.pair.otp }}-mix-
       - name: Install Dependencies
-        run: mix do deps.get, compile
+        run: mix deps.get
       - name: Check Formatting
         run: mix format --check-formatted
+        if: ${{ matrix.lint }}
       - name: Check unused dependencies
         run: mix deps.unlock --check-unused
+        if: ${{ matrix.lint }}
+      - name: Compile dependencies
+        run: mix deps.compile
+      - name: Check for compilation warnings
+        run: mix compile --warnings-as-errors
+        if: ${{ matrix.lint }}
       - name: Run Tests
         run: mix test
       - name: Check Coverage
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/master' && matrix.report_coverage
         run: mix coveralls.github
         continue-on-error: true

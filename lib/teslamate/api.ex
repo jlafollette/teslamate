@@ -3,7 +3,7 @@ defmodule TeslaMate.Api do
 
   require Logger
 
-  alias TeslaMate.Auth.{Tokens, Credentials}
+  alias TeslaMate.Auth.Tokens
   alias TeslaMate.{Vehicles, Convert}
   alias TeslaApi.Auth
 
@@ -14,6 +14,7 @@ defmodule TeslaMate.Api do
   defstruct name: nil, deps: %{}
   alias __MODULE__, as: State
 
+  @timeout :timer.minutes(2)
   @name __MODULE__
 
   # API
@@ -62,21 +63,27 @@ defmodule TeslaMate.Api do
     end
   end
 
-  def sign_in(name \\ @name, credentials) do
+  def sign_in(name \\ @name, args)
+
+  def sign_in(name, %Tokens{} = tokens) do
     case fetch_auth(name) do
-      {:error, :not_signed_in} -> GenServer.call(name, {:sign_in, [credentials]}, 30_000)
+      {:error, :not_signed_in} -> GenServer.call(name, {:sign_in, [tokens]}, @timeout)
       {:ok, %Auth{}} -> {:error, :already_signed_in}
     end
   end
 
-  def sign_in(name \\ @name, device_id, mfa_passcode, %Auth.MFA.Ctx{} = ctx) do
+  def sign_in(name, {email, password}) do
     case fetch_auth(name) do
-      {:error, :not_signed_in} ->
-        GenServer.call(name, {:sign_in, [device_id, mfa_passcode, ctx]}, 30_000)
-
-      {:ok, %Auth{}} ->
-        {:error, :already_signed_in}
+      {:error, :not_signed_in} -> GenServer.call(name, {:sign_in, [email, password]}, @timeout)
+      {:ok, %Auth{}} -> {:error, :already_signed_in}
     end
+  end
+
+  def sign_out(name \\ @name) do
+    true = :ets.delete(name, :auth)
+    :ok
+  rescue
+    _ in ArgumentError -> {:error, :not_signed_in}
   end
 
   # Callbacks
@@ -113,11 +120,11 @@ defmodule TeslaMate.Api do
   end
 
   @impl true
-  def handle_call({:sign_in, args}, _, state) do
+  def handle_call({:sign_in, args}, _, %State{} = state) do
     case args do
-      [%Credentials{use_legacy_auth: true} = c] -> Auth.legacy_login(c.email, c.password)
-      [%Credentials{} = c] -> Auth.login(c.email, c.password)
-      [device_id, passcode, ctx] -> Auth.login(device_id, passcode, ctx)
+      [args, callback] when is_function(callback) -> apply(callback, args)
+      [%Tokens{} = t] -> Auth.refresh(%Auth{token: t.access, refresh_token: t.refresh})
+      [email, password] -> Auth.login(email, password)
     end
     |> case do
       {:ok, %Auth{} = auth} ->
@@ -127,8 +134,19 @@ defmodule TeslaMate.Api do
         :ok = schedule_refresh(auth)
         {:reply, :ok, state}
 
-      {:ok, {:mfa, _devices, _ctx} = mfa} ->
-        {:reply, {:ok, mfa}, state}
+      {:ok, {:captcha, captcha, callback}} ->
+        wrapped_callback = fn captcha_code ->
+          GenServer.call(state.name, {:sign_in, [[captcha_code], callback]}, @timeout)
+        end
+
+        {:reply, {:ok, {:captcha, captcha, wrapped_callback}}, state}
+
+      {:ok, {:mfa, devices, callback}} ->
+        wrapped_callback = fn device_id, mfa_passcode ->
+          GenServer.call(state.name, {:sign_in, [[device_id, mfa_passcode], callback]}, @timeout)
+        end
+
+        {:reply, {:ok, {:mfa, devices, wrapped_callback}}, state}
 
       {:error, %TeslaApi.Error{} = e} ->
         {:reply, {:error, e}, state}
@@ -141,11 +159,17 @@ defmodule TeslaMate.Api do
       {:ok, tokens} ->
         Logger.info("Refreshing access token ...")
 
-        {:ok, refreshed_tokens} = Auth.refresh(tokens)
+        case Auth.refresh(tokens) do
+          {:ok, refreshed_tokens} ->
+            true = insert_auth(name, refreshed_tokens)
+            :ok = call(state.deps.auth, :save, [refreshed_tokens])
+            :ok = schedule_refresh(refreshed_tokens)
 
-        true = insert_auth(name, refreshed_tokens)
-        :ok = call(state.deps.auth, :save, [refreshed_tokens])
-        :ok = schedule_refresh(refreshed_tokens)
+          {:error, reason} ->
+            Logger.warning("Token refresh failed: #{inspect(reason, pretty: true)}")
+            Logger.warning("Retrying in 1 hour...")
+            Process.send_after(self(), :refresh_auth, :timer.hours(1))
+        end
 
       {:error, reason} ->
         Logger.warning("Cannot refresh access token: #{inspect(reason)}")

@@ -11,6 +11,7 @@ This setup is recommended only if you are running TeslaMate **on your home netwo
 
 - Docker _(if you are new to Docker, see [Installing Docker and Docker Compose](https://dev.to/rohansawant/installing-docker-and-docker-compose-on-the-raspberry-pi-in-5-simple-steps-3mgl))_
 - A Machine that's always on, so TeslaMate can continually fetch data
+- At least 1 GB of RAM on the machine for the installation to succeed. 
 - External internet access, to talk to tesla.com
 
 ## Instructions
@@ -61,8 +62,9 @@ This setup is recommended only if you are running TeslaMate **on your home netwo
          - teslamate-grafana-data:/var/lib/grafana
 
      mosquitto:
-       image: eclipse-mosquitto:1.6
+       image: eclipse-mosquitto:2
        restart: always
+       command: mosquitto -c /mosquitto-no-auth.conf
        ports:
          - 1883:1883
        volumes:

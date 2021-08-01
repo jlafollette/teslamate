@@ -2,7 +2,7 @@ defmodule TeslaMate.ApiTest do
   use TeslaMate.DataCase
 
   alias TeslaMate.Api
-  alias TeslaMate.Auth.{Tokens, Credentials}
+  alias TeslaMate.Auth.Tokens
 
   import Mock
 
@@ -52,12 +52,12 @@ defmodule TeslaMate.ApiTest do
     {TeslaApi.Auth, [],
      [
        login: fn email, password ->
-         send(pid, {TeslaApi.Auth, {:login, email, password}})
-         {:ok, %TeslaApi.Auth{token: "$token", refresh_token: "$token", expires_in: 10_000_000}}
-       end,
-       legacy_login: fn email, password ->
-         send(pid, {TeslaApi.Auth, {:legacy_login, email, password}})
-         {:ok, %TeslaApi.Auth{token: "$token", refresh_token: "$token", expires_in: 10_000_000}}
+         callback = fn captcha ->
+           send(pid, {TeslaApi.Auth, {:login, email, password, captcha}})
+           {:ok, %TeslaApi.Auth{token: "$token", refresh_token: "$token", expires_in: 10_000_000}}
+         end
+
+         {:ok, {:captcha, "", callback}}
        end,
        refresh: fn
          %{token: "cannot_be_refreshed", refresh_token: "cannot_be_refreshed"} = auth ->
@@ -72,8 +72,6 @@ defmodule TeslaMate.ApiTest do
   end
 
   @valid_tokens %Tokens{access: "$access", refresh: "$refresh"}
-
-  @valid_credentials %Credentials{email: "teslamate", password: "foo"}
 
   describe "sign in" do
     test "starts without tokens ", %{test: name} do
@@ -124,18 +122,21 @@ defmodule TeslaMate.ApiTest do
         refute_receive _
       end
     end
-  end
 
-  describe "sign_in/1" do
-    test "allows delayed sign in", %{test: name} do
+    @email "teslamate@example.com"
+    @password "foo"
+
+    test "requests to enter captcha code", %{test: name} do
       with_mocks [auth_mock(self()), vehicle_mock(self())] do
         :ok = start_api(name, tokens: nil)
 
         assert false == Api.signed_in?(name)
 
-        assert :ok = Api.sign_in(name, @valid_credentials)
+        assert {:ok, {:captcha, "", callback}} = Api.sign_in(name, {@email, @password})
 
-        assert_receive {TeslaApi.Auth, {:login, "teslamate", "foo"}}
+        assert :ok == callback.("$captcha")
+
+        assert_receive {TeslaApi.Auth, {:login, @email, @password, "$captcha"}}
         assert_receive {AuthMock, {:save, %TeslaApi.Auth{}}}
         assert_receive {VehiclesMock, :restart}
         assert true == Api.signed_in?(name)
@@ -144,15 +145,52 @@ defmodule TeslaMate.ApiTest do
       end
     end
 
-    test "uses legacy login", %{test: name} do
+    test "does not require captcha to be present", %{test: name} do
+      pid = self()
+
+      with_mocks [
+        {TeslaApi.Auth, [],
+         [
+           login: fn email, password ->
+             send(pid, {TeslaApi.Auth, {:login, email, password}})
+
+             auth = %TeslaApi.Auth{
+               token: "$token",
+               refresh_token: "$token",
+               expires_in: 10_000_000
+             }
+
+             {:ok, auth}
+           end
+         ]},
+        vehicle_mock(self())
+      ] do
+        :ok = start_api(name, tokens: nil)
+
+        assert false == Api.signed_in?(name)
+
+        assert :ok = Api.sign_in(name, {@email, @password})
+
+        assert_receive {TeslaApi.Auth, {:login, @email, @password}}
+        assert_receive {AuthMock, {:save, %TeslaApi.Auth{}}}
+        assert_receive {VehiclesMock, :restart}
+        assert true == Api.signed_in?(name)
+
+        refute_receive _
+      end
+    end
+
+    test "allows sign in with API tokens", %{test: name} do
       with_mocks [auth_mock(self()), vehicle_mock(self())] do
         :ok = start_api(name, tokens: nil)
 
         assert false == Api.signed_in?(name)
 
-        assert :ok = Api.sign_in(name, %Credentials{@valid_credentials | use_legacy_auth: true})
+        assert :ok = Api.sign_in(name, @valid_tokens)
 
-        assert_receive {TeslaApi.Auth, {:legacy_login, "teslamate", "foo"}}
+        assert_receive {TeslaApi.Auth,
+                        {:refresh, %TeslaApi.Auth{refresh_token: "$refresh", token: "$access"}}}
+
         assert_receive {AuthMock, {:save, %TeslaApi.Auth{}}}
         assert_receive {VehiclesMock, :restart}
         assert true == Api.signed_in?(name)
@@ -169,22 +207,38 @@ defmodule TeslaMate.ApiTest do
         assert_receive {AuthMock, {:save, %TeslaApi.Auth{}}}
         assert true == Api.signed_in?(name)
 
-        assert {:error, :already_signed_in} = Api.sign_in(name, @valid_credentials)
+        assert {:error, :already_signed_in} = Api.sign_in(name, {@email, @password})
 
         refute_receive _
       end
     end
 
-    test "fails if api returns error", %{test: name} do
-      login = fn _email, _password ->
-        {:error, %TeslaApi.Error{reason: :unauthorized, env: %Finch.Response{}}}
-      end
-
-      with_mock TeslaApi.Auth, login: login do
+    test "fails if captcha cannot be loaded", %{test: name} do
+      with_mock TeslaApi.Auth,
+        login: fn _email, _password ->
+          {:error, %TeslaApi.Error{reason: :internal_error, env: %Finch.Response{}}}
+        end do
         :ok = start_api(name, start_auth: false)
 
-        assert {:error, %TeslaApi.Error{reason: :unauthorized}} =
-                 Api.sign_in(name, @valid_credentials)
+        assert {:error, %TeslaApi.Error{reason: :internal_error}} =
+                 Api.sign_in(name, {@email, @password})
+      end
+    end
+
+    test "fails if api returns error", %{test: name} do
+      with_mock TeslaApi.Auth,
+        login: fn _email, _password ->
+          callback = fn _captcha ->
+            {:error, %TeslaApi.Error{reason: :unauthorized, env: %Finch.Response{}}}
+          end
+
+          {:ok, {:captcha, "", callback}}
+        end do
+        :ok = start_api(name, start_auth: false)
+
+        assert {:ok, {:captcha, "", callback}} = Api.sign_in(name, {@email, @password})
+
+        assert {:error, %TeslaApi.Error{reason: :unauthorized}} = callback.("$captcha")
       end
     end
   end
@@ -266,13 +320,16 @@ defmodule TeslaMate.ApiTest do
       with_mocks [auth_mock(self()), vehicle_mock] do
         :ok = start_api(name, start_auth: false)
 
-        assert :ok = Api.sign_in(name, @valid_credentials)
+        assert {:ok, {:captcha, "", callback}} = Api.sign_in(name, {@email, @password})
+        assert :ok == callback.("$captcha")
         assert {:error, :not_signed_in} = Api.list_vehicles(name)
 
-        assert :ok = Api.sign_in(name, @valid_credentials)
+        assert {:ok, {:captcha, "", callback}} = Api.sign_in(name, {@email, @password})
+        assert :ok == callback.("$captcha")
         assert {:error, :not_signed_in} = Api.get_vehicle(name, 0)
 
-        assert :ok = Api.sign_in(name, @valid_credentials)
+        assert {:ok, {:captcha, "", callback}} = Api.sign_in(name, {@email, @password})
+        assert :ok == callback.("$captcha")
         assert {:error, :not_signed_in} = Api.get_vehicle_with_state(name, 0)
       end
     end
@@ -324,7 +381,8 @@ defmodule TeslaMate.ApiTest do
       with_mocks [auth_mock(self()), vehicle_mock] do
         :ok = start_api(name, start_auth: false)
 
-        assert :ok = Api.sign_in(name, @valid_credentials)
+        assert {:ok, {:captcha, "", callback}} = Api.sign_in(name, {@email, @password})
+        assert :ok == callback.("$captcha")
         assert {:error, :vehicle_not_found} = Api.get_vehicle(name, 0)
         assert {:error, :vehicle_not_found} = Api.get_vehicle_with_state(name, 0)
       end
@@ -349,7 +407,9 @@ defmodule TeslaMate.ApiTest do
       with_mocks [auth_mock(self()), vehicle_mock] do
         :ok = start_api(name, start_auth: false)
 
-        assert :ok = Api.sign_in(name, @valid_credentials)
+        assert {:ok, {:captcha, "", callback}} = Api.sign_in(name, {@email, @password})
+        assert :ok == callback.("$captcha")
+
         assert {:error, :unknown} = Api.list_vehicles(name)
         assert {:error, :unknown} = Api.get_vehicle(name, 0)
         assert {:error, :unknown} = Api.get_vehicle_with_state(name, 0)
@@ -371,7 +431,8 @@ defmodule TeslaMate.ApiTest do
       with_mocks [auth_mock(self()), vehicle_mock] do
         :ok = start_api(name, start_auth: false)
 
-        assert :ok = Api.sign_in(name, @valid_credentials)
+        assert {:ok, {:captcha, "", callback}} = Api.sign_in(name, {@email, @password})
+        assert :ok == callback.("$captcha")
         assert {:error, :closed} = Api.list_vehicles(name)
         assert {:error, :closed} = Api.get_vehicle(name, 0)
         assert {:error, :closed} = Api.get_vehicle_with_state(name, 0)

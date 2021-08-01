@@ -1,6 +1,235 @@
 # Changelog
 
-## [1.22.0-dev]
+## [1.23.7] - 2021-07-16
+
+### Improvements and Bug Fixes
+
+- Since Tesla have once again made changes to the login with captcha, this version fixes the problems caused by it
+- Update permissions to the Grafana plugin directory ([#1814](https://github.com/adriankumpf/teslamate/pull/1814) by [letienne](https://github.com/letienne))
+
+#### Documentation
+
+- Fix heading of the Home Assistant binary_sensor config ([#1756](https://github.com/adriankumpf/teslamate/pull/1756) by [mrzeldaguy](https://github.com/mrzeldaguy))
+
+## [1.23.6] - 2021-07-08
+
+### Improvements and Bug Fixes
+
+- Disable sign-in button if captcha code is missing
+- Fix login for Chinese accounts
+
+## [1.23.5] - 2021-07-08
+
+### Improvements and Bug Fixes
+
+- Fix login with captcha
+
+#### Dashboards
+
+- Timeline: Make added kWh more accurate
+
+## [1.23.4] - 2021-06-18
+
+### Improvements and Bug Fixes
+
+#### Dashboards
+
+- Drive Details: Don't round down duration ([#1677](https://github.com/adriankumpf/teslamate/pull/1677) by [Dulanic](https://github.com/Dulanic))
+- Projected Range: Prevent division by zero ([#1678](https://github.com/adriankumpf/teslamate/pull/1678) by [Dulanic](https://github.com/Dulanic))
+- Updates / States / Stastistics: Use local browser time ([#1685](https://github.com/adriankumpf/teslamate/pull/1685) by [Ed-M72](https://github.com/Ed-M72))
+- Charge Level: Simplify database query ([#1693](https://github.com/adriankumpf/teslamate/pull/1693) by [Dulanic](https://github.com/Dulanic))
+- Timeline: Add new category `Missing` and some other adjustments ([#1708](https://github.com/adriankumpf/teslamate/pull/1708) by [DrMichael](https://github.com/DrMichael))
+- Timeline: Fix missing datasources ([#1730](https://github.com/adriankumpf/teslamate/pull/1730) by [nickbock](https://github.com/nickbock))
+- Bump Grafana to 7.5.8 (Docker image)
+
+#### Documentation
+
+- Fix Home Assistant Lovelace UI and sensors ([#1711](https://github.com/adriankumpf/teslamate/pull/1711) by [JakobLichterfeld](https://github.com/JakobLichterfeld))
+- Add FreeBSD guide ([#1646](https://github.com/adriankumpf/teslamate/pull/1646) and [#1712](https://github.com/adriankumpf/teslamate/pull/1712) by [tuxbox](https://github.com/tuxbox))
+
+## [1.23.3] - 2021-06-02
+
+### Bug Fixes
+
+- Fix API tokens form
+
+## [1.23.2] - 2021-06-02
+
+### Bug Fixes
+
+- Fix sign-in for Chinese accounts
+
+## [1.23.1] - 2021-06-02
+
+### Improvements and Bug Fixes
+
+- Tesla has removed the captcha again …
+- Fix error when changing the language to Chinese
+
+#### Translations
+
+- Update Swedish translations ([#1655](https://github.com/adriankumpf/teslamate/pull/1655) by [tobiasehlert](https://github.com/tobiasehlert))
+
+## [1.23.0] - 2021-06-01
+
+### Improvements and Bug Fixes
+
+- Support Tesla's new captcha verification
+- Improve naming of addresses (city aliases)
+- Add `power` to published MQTT topics ([#1504](https://github.com/adriankumpf/teslamate/pull/1504) by [mnadvornik](https://github.com/mnadvornik))
+- The Docker image now ships with Erlang/OTP 24 which comes with a JIT-compiler (enabled on most x86 64-bit platforms)
+- Only publish geofence via MQTT if it has changed
+- Fix calculation of gross consumption while charging
+- Fix service mode detection
+- Fix typo in code_challenge_method ([#1571](https://github.com/adriankumpf/teslamate/pull/1571) by [tuxbox](https://github.com/tuxbox))
+- Make `dashboards.sh` script portable e.g. to BSD ([#1645](https://github.com/adriankumpf/teslamate/pull/1645) by [tuxbox](https://github.com/tuxbox))
+
+#### Dashboards
+
+- Add a new Timeline dashboard ([#1621](https://github.com/adriankumpf/teslamate/pull/1621) by [DrMichael](https://github.com/DrMichael))
+- Statistics: Fix `pq: time zone "" not recognized` error ([#1470](https://github.com/adriankumpf/teslamate/pull/1470) and [#1559](https://github.com/adriankumpf/teslamate/pull/1559) by [Dulanic](https://github.com/Dulanic))
+
+#### Translations
+
+- Update Swedish translations ([#1461](https://github.com/adriankumpf/teslamate/pull/1461) by [tobiasehlert](https://github.com/tobiasehlert))
+- Update French translations ([#1473](https://github.com/adriankumpf/teslamate/pull/1473) by [ranaud80](https://github.com/ranaud80))
+- Update German translations
+
+#### Documentation
+
+- Update Mosquitto version used in docker-compose examples
+- Add device classes and binary sensors to documented Home Assistant config ([#1597](https://github.com/adriankumpf/teslamate/pull/1597) by [flacjacket](https://github.com/flacjacket) and [#1634](https://github.com/adriankumpf/teslamate/pull/1634) by [ffeingol](https://github.com/ffeingol))
+
+## [1.22.0] - 2021-03-17
+
+### Improvements and Bug Fixes
+
+- Add option to sign in with existing API tokens
+- Avoid false `plugged_in` events ([#1423](https://github.com/adriankumpf/teslamate/pull/1423) by [brianmay](https://github.com/brianmay))
+- Handle distinct OSM IDs gracefully when chaning the address language
+- Set another user agent for auth requests.
+  - ⚠️ _This fixes timeouts when signing in for the time being. Most users who are affected reported using a cloud hosting service. Expect this to break anytime Tesla decides to block this type of traffic coming from these providers._
+- Update user agent used for API requests to GitHub and OpenStreetMap
+
+#### Dashboards
+
+- Add battery heater info to Overview / Charging Details and Charge Details dashboards ([#1428](https://github.com/adriankumpf/teslamate/pull/1428) by [ToniA](https://github.com/ToniA))
+- Statistics: Calculate efficiency from charged energy ([#1445](https://github.com/adriankumpf/teslamate/pull/1445) by [ToniA](https://github.com/ToniA))
+- Make Statistics dashboard look the same on both kilometers and miles ([#1439](https://github.com/adriankumpf/teslamate/pull/1439) by [ToniA](https://github.com/ToniA))
+- Updates: Rename column to "Since Previous Update"
+
+#### Translations
+
+- Update Spanish translation ([#1446](https://github.com/adriankumpf/teslamate/pull/1446) by [alceasan](https://github.com/alceasan))
+
+#### Documentation
+
+- Explaing the asleep mode with MCU1 and the non-streaming mode ([#1453](https://github.com/adriankumpf/teslamate/pull/1453) by [ToniA](https://github.com/ToniA))
+
+## [1.21.6] - 2021-03-10
+
+### Improvements and Bug Fixes
+
+- Change HTTP headers again to avoid auth requests timing out
+- Fix changing the address language
+- Add health check route ([#1422](https://github.com/adriankumpf/teslamate/pull/1422) by [brianmay](https://github.com/brianmay))
+
+#### Translations
+
+- Update Korean translation ([#1381](https://github.com/adriankumpf/teslamate/pull/1381) by [dongbum](https://github.com/dongbum))
+- Updated Danish translation ([#1404](https://github.com/adriankumpf/teslamate/pull/1404) by [larskochhansen](https://github.com/larskochhansen))
+
+#### Documentation
+
+- Add fixed pricing information to [TeslaMateApi](https://github.com/tobiasehlert/TeslaMateApi) project description ([#1399](https://github.com/adriankumpf/teslamate/pull/1399) by [tobiasehlert](https://github.com/tobiasehlert))
+
+## [1.21.5] - 2021-02-21
+
+### Improvements and Bug Fixes
+
+- Implement a workaround for login requests timing out
+- Handle failed token refresh requests gracefully
+
+#### Dashboards
+
+- Overview: Fix Gross Panel font size ([#1363](https://github.com/adriankumpf/teslamate/pull/1363) by [DrMichael](https://github.com/DrMichael))
+- Charging Stats: Set bucket size on charging heatmap ([#1355](https://github.com/adriankumpf/teslamate/pull/1355) by [leewillis77](https://github.com/leewillis77))
+- Downgrade Grafana to 7.3.7 because of an incompatibility with the Trackmap plugin
+
+## [1.21.4] - 2021-02-16
+
+### Enhancements and Bug Fixes
+
+- Point out more clearly when starting into import mode
+- Hide sign-out button in import mode
+- Don't purge debug log statements from production release
+- Handle non-existing range values after the car was offline
+
+#### Dashboards
+
+- Statistics: Show "Starting at" column and fix timezone issue ([#1254](https://github.com/adriankumpf/teslamate/pull/1254) by [DrMichael](https://github.com/DrMichael))
+- Charge Level: Fix usable battery level alternating between usable battery level and regular battery level
+- Bump Grafana to v7.4.1
+
+#### Documentation
+
+- Add [TeslaMateApi](https://github.com/tobiasehlert/TeslaMateApi) to the list of projects using TeslaMate ([#1350](https://github.com/adriankumpf/teslamate/pull/1350) by [tobiasehlert](https://github.com/tobiasehlert))
+- Update installation docks ([#1287](https://github.com/adriankumpf/teslamate/pull/1287) by [tobiasehlert](https://github.com/tobiasehlert))
+- Update HomeAssistant documentation ([#1321](https://github.com/adriankumpf/teslamate/pull/1321) by [jschollenberger](https://github.com/jschollenberger))
+
+## [1.21.3] - 2021-02-06
+
+- Add support for v3 API tokens in China
+- Detect if TeslaFi CSV files contain data for more than one car
+- Change log level for streaming timeouts to debug
+
+## [1.21.2] - 2021-01-31
+
+> **⚠️ NOTE**: Any previously stored API refresh tokens will no longer function, as Tesla has deprecated the existing authentication endpoint. Existing access tokens will continue to work **until they expire**. Eventually, a full login will be needed to obtain new refresh tokens.
+>
+> **To immediately obtain new tokens after upgrading**, go to the TeslaMate settings page, **sign out via the button** at the bottom of the page and then sign in again.
+
+> **⚠️ NOTE**: This release changes TeslaMate's base Docker image to Debian. If you have any customizations on top of TeslaMate (like healthchecks), they could need updates to work on top of this new image.
+
+### Enhancements
+
+- Use the new Tesla authentication endpoint for refreshing access tokens
+- Drop support for the `/oauth/token` endpoint
+- Add a sign-out button at the bottom of the settings page
+
+#### Translations
+
+- Add Turkish Language Support ([#1194](https://github.com/adriankumpf/teslamate/pull/1194) by [neocorp](https://github.com/neocorp))
+
+#### Dashboards
+
+- Display average outside temperature in charges dashboard ([#1213](https://github.com/adriankumpf/teslamate/pull/1213) by [DrMichael](https://github.com/DrMichael))
+
+## [1.21.1] - 2021-01-10
+
+### Enhancements
+
+#### Translations
+
+- Add Finnish translation ([#1190](https://github.com/adriankumpf/teslamate/pull/1190) by [puppee](https://github.com/puppee))
+
+#### Documentation
+
+- Add some documentation about updating TeslaMate when installed with Docker ([#1170](https://github.com/adriankumpf/teslamate/pull/1170) by [fatbasstard](https://github.com/fatbasstard))
+- Update "Import from tesla-apiscraper" documentation: Give an example how to get the vehicle_id from TeslaMate ([#1174](https://github.com/adriankumpf/teslamate/pull/1174) by [Bdot42](https://github.com/Bdot42))
+- Add link to unofficial Home Assistant addon ([#1188](https://github.com/adriankumpf/teslamate/pull/1188) by [matt-FFFFFF](https://github.com/matt-FFFFFF))
+
+#### Other
+
+- Allow to use non-standard MQTT ports (via [MQTT_PORT](https://docs.teslamate.org/docs/configuration/environment_variables))
+- Refactoring: Use built-in Ecto enum type
+- Guard against unexpected MFA errors
+
+### Bug Fixes
+
+- Update drive duration query to avoid displaying different times for drives (Details vs Overview) ([#1191](https://github.com/adriankumpf/teslamate/pull/1191) by [fatbasstard](https://github.com/fatbasstard))
+- Fix font colors for light theme (Updates dashboard) ([#1169](https://github.com/adriankumpf/teslamate/pull/1169) by [fatbasstard](https://github.com/fatbasstard))
+- Fix typo (Statistics dashboard) ([#1185](https://github.com/adriankumpf/teslamate/pull/1185) by [rogiervandergeer](https://github.com/rogiervandergeer))
 
 ## [1.21.0] - 2021-01-02
 
@@ -1110,7 +1339,21 @@ New users need to sign in via the web interface.
 
 ## [1.0.0] - 2019-07-25
 
-[1.22.0-dev]: https://github.com/adriankumpf/teslamate/compare/v1.21.0...HEAD
+[1.23.7]: https://github.com/adriankumpf/teslamate/compare/v1.23.6...v1.23.7
+[1.23.6]: https://github.com/adriankumpf/teslamate/compare/v1.23.5...v1.23.6
+[1.23.5]: https://github.com/adriankumpf/teslamate/compare/v1.23.4...v1.23.5
+[1.23.4]: https://github.com/adriankumpf/teslamate/compare/v1.23.3...v1.23.4
+[1.23.3]: https://github.com/adriankumpf/teslamate/compare/v1.23.2...v1.23.3
+[1.23.2]: https://github.com/adriankumpf/teslamate/compare/v1.23.1...v1.23.2
+[1.23.1]: https://github.com/adriankumpf/teslamate/compare/v1.23.0...v1.23.1
+[1.23.0]: https://github.com/adriankumpf/teslamate/compare/v1.22.0...v1.23.0
+[1.22.0]: https://github.com/adriankumpf/teslamate/compare/v1.21.6...v1.22.0
+[1.21.6]: https://github.com/adriankumpf/teslamate/compare/v1.21.5...v1.21.6
+[1.21.5]: https://github.com/adriankumpf/teslamate/compare/v1.21.4...v1.21.5
+[1.21.4]: https://github.com/adriankumpf/teslamate/compare/v1.21.3...v1.21.4
+[1.21.3]: https://github.com/adriankumpf/teslamate/compare/v1.21.2...v1.21.3
+[1.21.2]: https://github.com/adriankumpf/teslamate/compare/v1.21.1...v1.21.2
+[1.21.1]: https://github.com/adriankumpf/teslamate/compare/v1.21.0...v1.21.1
 [1.21.0]: https://github.com/adriankumpf/teslamate/compare/v1.20.1...v1.21.0
 [1.20.1]: https://github.com/adriankumpf/teslamate/compare/v1.20.0...v1.20.1
 [1.20.0]: https://github.com/adriankumpf/teslamate/compare/v1.19.4...v1.20.0
