@@ -6,12 +6,11 @@ defmodule TeslaMateWeb.SettingsLive.Index do
   alias TeslaMate.Settings.{GlobalSettings, CarSettings}
   alias TeslaMate.{Settings, Updater, Api}
 
-  @impl true
-  def mount(_params, %{"settings" => settings, "locale" => locale}, socket) do
-    if connected?(socket), do: Gettext.put_locale(locale)
+  on_mount {TeslaMateWeb.InitAssigns, :locale}
 
+  @impl true
+  def mount(_params, %{"settings" => settings}, socket) do
     assigns = %{
-      locale: locale,
       addresses_migrated?: addresses_migrated?(),
       car_settings: Settings.get_car_settings() |> prepare(),
       car: nil,
@@ -136,8 +135,8 @@ defmodule TeslaMateWeb.SettingsLive.Index do
                  |> Enum.into(%{})
 
   @supported_ui_languages TeslaMateWeb.Cldr.known_locale_names()
-                          |> Enum.reject(&(&1 in ["en-001", "root", "zh"]))
-                          |> Enum.map(&String.replace(&1, "-", "_"))
+                          |> Enum.reject(&(&1 in [:zh]))
+                          |> Enum.map(&String.replace(to_string(&1), "-", "_"))
                           |> Enum.map(&{Map.get(@language_tags, &1, &1), &1})
                           |> Enum.sort_by(&elem(&1, 0))
 

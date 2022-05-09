@@ -9,14 +9,20 @@
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
   },
   "editable": true,
-  "gnetId": null,
+  "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "iteration": 1598012836700,
+  "iteration": 1650630830781,
   "links": [
     {
       "icon": "dashboard",
@@ -36,6 +42,7 @@
       "type": "dashboards"
     }
   ],
+  "liveNow": false,
   "panels": [
     {
       "collapsed": false,
@@ -49,24 +56,14 @@
       "id": 12,
       "panels": [],
       "repeat": "car_id",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
-        }
-      },
       "title": "$car_id",
       "type": "row"
     },
     {
-      "cacheTimeout": null,
       "datasource": "TeslaMate",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "mappings": [],
-          "nullValueMode": "connected",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -87,7 +84,6 @@
         "y": 1
       },
       "id": 8,
-      "interval": null,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -109,14 +105,7 @@
         },
         "textMode": "value"
       },
-      "pluginVersion": "7.1.4",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
-        }
-      },
+      "pluginVersion": "8.4.5",
       "targets": [
         {
           "format": "table",
@@ -147,19 +136,14 @@
           ]
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Number of Charges",
       "type": "stat"
     },
     {
-      "cacheTimeout": null,
       "datasource": "TeslaMate",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "mappings": [],
-          "nullValueMode": "connected",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -180,7 +164,6 @@
         "y": 1
       },
       "id": 10,
-      "interval": null,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -202,14 +185,7 @@
         },
         "textMode": "value"
       },
-      "pluginVersion": "7.1.4",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
-        }
-      },
+      "pluginVersion": "8.4.5",
       "targets": [
         {
           "format": "table",
@@ -240,20 +216,15 @@
           ]
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Charged in total",
       "type": "stat"
     },
     {
-      "cacheTimeout": null,
       "datasource": "TeslaMate",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "decimals": 2,
           "mappings": [],
-          "nullValueMode": "connected",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -269,12 +240,11 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 6,
+        "w": 4,
         "x": 12,
         "y": 1
       },
       "id": 14,
-      "interval": null,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -296,14 +266,89 @@
         },
         "textMode": "value"
       },
-      "pluginVersion": "7.1.4",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
+      "pluginVersion": "8.4.5",
+      "targets": [
+        {
+          "datasource": "TeslaMate",
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n\tsum(cp.cost)\nFROM\n\tcharging_processes cp\nLEFT JOIN \n\taddresses addr ON addr.id = address_id\nWHERE\n  $__timeFilter(end_date)\n  AND addr.name LIKE '%Supercharger%'\n\tAND cp.cost IS NOT NULL\n\tAND cp.car_id = $car_id;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "latitude"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "addresses",
+          "timeColumn": "inserted_at",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
         }
+      ],
+      "title": "Charging Cost at SuC",
+      "type": "stat"
+    },
+    {
+      "datasource": "TeslaMate",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#c7d0d9",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
       },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 27,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "fieldOptions": {
+          "calcs": [
+            "mean"
+          ]
+        },
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "pluginVersion": "8.4.5",
       "targets": [
         {
           "format": "table",
@@ -334,8 +379,6 @@
           ]
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Total Charging Cost",
       "type": "stat"
     },
@@ -343,7 +386,6 @@
       "datasource": "TeslaMate",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
           "decimals": 2,
           "displayName": "",
           "mappings": [],
@@ -361,14 +403,14 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 6,
-        "x": 18,
+        "w": 4,
+        "x": 20,
         "y": 1
       },
       "id": 26,
       "options": {
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -380,14 +422,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.1.4",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
-        }
-      },
+      "pluginVersion": "8.4.5",
       "targets": [
         {
           "format": "table",
@@ -418,16 +453,11 @@
           ]
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Cost per 100 $length_unit",
       "type": "stat"
     },
     {
-      "cards": {
-        "cardPadding": null,
-        "cardRound": null
-      },
+      "cards": {},
       "color": {
         "cardColor": "#b4ff00",
         "colorScale": "linear",
@@ -438,12 +468,6 @@
       },
       "dataFormat": "timeseries",
       "datasource": "TeslaMate",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "gridPos": {
         "h": 6,
         "w": 12,
@@ -458,13 +482,6 @@
         "show": false
       },
       "reverseYBuckets": false,
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
-        }
-      },
       "targets": [
         {
           "format": "time_series",
@@ -496,7 +513,6 @@
         }
       ],
       "timeFrom": "6M",
-      "timeShift": null,
       "title": "Charge Heatmap",
       "tooltip": {
         "show": true,
@@ -506,19 +522,13 @@
       "xAxis": {
         "show": true
       },
-      "xBucketNumber": null,
-      "xBucketSize": null,
       "yAxis": {
-        "decimals": null,
         "format": "short",
         "logBase": 1,
-        "max": null,
-        "min": null,
-        "show": true,
-        "splitFactor": null
+        "max": "100",
+        "show": true
       },
       "yBucketBound": "auto",
-      "yBucketNumber": null,
       "yBucketSize": 10.00001
     },
     {
@@ -527,12 +537,6 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "TeslaMate",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -555,18 +559,14 @@
       "lines": true,
       "linewidth": 1,
       "nullPointMode": "connected",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
-      "pluginVersion": "7.1.4",
+      "pluginVersion": "8.4.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
-        }
-      },
       "seriesOverrides": [
         {
           "alias": "end_battery_level",
@@ -588,7 +588,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n\t$__time(start_date),\n\tstart_battery_level,\n\tend_battery_level\nFROM\n\tcharging_processes\nWHERE\n\t$__timeFilter(start_date)\n\tAND duration_min > 3\n\tAND car_id = $car_id\nORDER BY\n\tstart_date;",
+          "rawSql": "SELECT\n\t$__timeGroup(start_date,'2h') as time,\n\tMIN(start_battery_level) as start_battery_level,\n\tMAX(end_battery_level) as end_battery_level\nFROM\n\tcharging_processes\nWHERE\n\t$__timeFilter(start_date)\n\tAND duration_min > 3\n\tAND car_id = $car_id\nGROUP BY\n\t1\nORDER BY\n\t1;",
           "refId": "A",
           "select": [
             [
@@ -632,7 +632,6 @@
       ],
       "timeFrom": "6M",
       "timeRegions": [],
-      "timeShift": null,
       "title": "Charge Delta",
       "tooltip": {
         "shared": true,
@@ -641,17 +640,13 @@
       },
       "type": "graph",
       "xaxis": {
-        "buckets": null,
         "mode": "time",
-        "name": null,
         "show": true,
         "values": []
       },
       "yaxes": [
         {
-          "decimals": null,
           "format": "short",
-          "label": null,
           "logBase": 1,
           "max": "100",
           "min": "0",
@@ -659,39 +654,65 @@
         },
         {
           "format": "short",
-          "label": null,
           "logBase": 1,
-          "max": null,
-          "min": null,
           "show": false
         }
       ],
       "yaxis": {
-        "align": false,
-        "alignLevel": null
+        "align": false
       }
     },
     {
-      "aliasColors": {
-        "AC": "#73BF69",
-        "DC": "#FADE2A"
-      },
-      "breakPoint": "50%",
-      "cacheTimeout": null,
-      "combine": {
-        "label": "Others",
-        "threshold": 0
-      },
       "datasource": "TeslaMate",
-      "decimals": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "kwatth"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "AC"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "DC"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FADE2A",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
-      "fontSize": "150%",
-      "format": "kwatth",
       "gridPos": {
         "h": 13,
         "w": 5,
@@ -699,26 +720,34 @@
         "y": 10
       },
       "id": 18,
-      "interval": null,
-      "legend": {
-        "percentage": true,
-        "percentageDecimals": 1,
-        "show": true,
-        "values": true
-      },
-      "legendType": "Under graph",
       "links": [],
       "maxDataPoints": 3,
-      "nullPointMode": "connected",
-      "pieType": "pie",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
+      "options": {
+        "displayLabels": [
+          "name"
+        ],
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom",
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
         }
       },
-      "strokeWidth": "1",
       "targets": [
         {
           "format": "time_series",
@@ -749,25 +778,24 @@
           ]
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "AC/DC – kWh",
-      "type": "grafana-piechart-panel",
-      "valueName": "total"
+      "type": "piechart"
     },
     {
       "autoPanLabels": true,
       "autoWidthLabels": true,
+      "categories": "a,b",
       "circleMaxSize": 30,
       "circleMinSize": 2,
       "circleOptions": {
         "strokeEnabled": false,
         "strokeWeight": "2"
       },
-      "clickthroughOptions": {
-        "windowName": null
-      },
+      "circleSizeAbsoluteEnabled": false,
+      "circleSizeAbsoluteFactor": 1,
+      "clickthroughOptions": {},
       "clickthroughUrl": "",
+      "colorMode": "threshold",
       "colors": [
         "#f53636",
         "#c05634",
@@ -776,22 +804,15 @@
         "#32ac2d"
       ],
       "customAttribution": false,
-      "customAttributionText": null,
       "datasource": "TeslaMate",
       "decimals": 2,
       "description": "",
       "doubleClickZoom": true,
       "dragging": true,
-      "esGeoPoint": null,
-      "esLink": null,
-      "esLocationName": null,
+      "enableOverlay": false,
+      "enableReloadOverlay": false,
       "esMetric": "Count",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
+      "formatOmitEmptyValue": false,
       "gridPos": {
         "h": 13,
         "w": 14,
@@ -806,23 +827,17 @@
       "ignoreEscapeKey": false,
       "ignoreInvalidGeohashValues": false,
       "initialZoom": 1,
-      "legendContainerSelector": "",
       "locationData": "table",
       "mapCenter": "(0°, 0°)",
       "mapCenterLatitude": 0,
       "mapCenterLongitude": 0,
       "mapFitData": true,
-      "mapZoomByRadius": null,
       "maxDataPoints": 1,
-      "maximumZoom": "9",
       "mouseWheelZoom": true,
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
-        }
-      },
+      "overlayOpacity": 0.5,
+      "overlayRangeLatitude": "0,10",
+      "overlayRangeLongitude": "0,20",
+      "overlayUrl": "",
       "showAttribution": false,
       "showLegend": true,
       "showZoomControl": true,
@@ -830,15 +845,14 @@
       "tableQueryOptions": {
         "geohashField": "geohash",
         "labelField": "loc_nm",
-        "labelLocationKeyField": null,
         "latitudeField": "lat",
-        "linkField": "",
         "longitudeField": "lng",
         "metricField": "pct",
         "queryType": "coordinates"
       },
       "targets": [
         {
+          "datasource": "TeslaMate",
           "format": "table",
           "group": [],
           "metricColumn": "none",
@@ -868,35 +882,63 @@
         }
       ],
       "thresholds": "0,25,50,75",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Charging heat map by kWh",
-      "type": "grafana-map-panel",
+      "type": "panodata-map-panel",
       "unitPlural": "%",
       "unitSingular": "%",
       "valueName": "total"
     },
     {
-      "aliasColors": {
-        "AC": "#73BF69",
-        "DC": "#FADE2A"
-      },
-      "breakPoint": "50%",
-      "cacheTimeout": null,
-      "combine": {
-        "label": "Others",
-        "threshold": 0
-      },
       "datasource": "TeslaMate",
-      "decimals": 1,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 1,
+          "mappings": [],
+          "unit": "dtdurations"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "AC"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "DC"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FADE2A",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
-      "fontSize": "150%",
-      "format": "dtdurations",
       "gridPos": {
         "h": 13,
         "w": 5,
@@ -904,26 +946,34 @@
         "y": 10
       },
       "id": 20,
-      "interval": null,
-      "legend": {
-        "percentage": true,
-        "percentageDecimals": 1,
-        "show": true,
-        "values": true
-      },
-      "legendType": "Under graph",
       "links": [],
       "maxDataPoints": 3,
-      "nullPointMode": "connected",
-      "pieType": "pie",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
+      "options": {
+        "displayLabels": [
+          "name"
+        ],
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom",
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
         }
       },
-      "strokeWidth": 1,
       "targets": [
         {
           "format": "time_series",
@@ -954,18 +1004,207 @@
           ]
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "AC/DC – Duration",
-      "type": "grafana-piechart-panel",
-      "valueName": "total"
+      "type": "piechart"
+    },
+    {
+      "datasource": "TeslaMate",
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 29,
+      "links": [],
+      "pconfig": {
+        "fixScale": "",
+        "layout": {
+          "dragmode": "zoom",
+          "font": {
+            "family": "\"Open Sans\", Helvetica, Arial, sans-serif"
+          },
+          "hovermode": "closest",
+          "legend": {
+            "orientation": "h"
+          },
+          "showlegend": false,
+          "xaxis": {
+            "rangemode": "normal",
+            "showgrid": true,
+            "title": "SOC [%]",
+            "type": "linear",
+            "zeroline": false
+          },
+          "yaxis": {
+            "rangemode": "tozero",
+            "showgrid": true,
+            "title": "kW",
+            "type": "linear",
+            "zeroline": false
+          },
+          "zaxis": {
+            "rangemode": "normal",
+            "showgrid": true,
+            "type": "linear",
+            "zeroline": false
+          }
+        },
+        "loadFromCDN": false,
+        "settings": {
+          "displayModeBar": false,
+          "type": "scatter"
+        },
+        "showAnnotations": true,
+        "traces": [
+          {
+            "mapping": {
+              "color": "charging_process_id",
+              "text": "Charge",
+              "x": "SOC [%]",
+              "y": "Power [kW]"
+            },
+            "name": "Charge Curve",
+            "settings": {
+              "color_option": "ramp",
+              "line": {
+                "color": "#005f81",
+                "dash": "solid",
+                "shape": "linear",
+                "width": 6
+              },
+              "marker": {
+                "color": "#33B5E5",
+                "colorscale": "Reds",
+                "line": {
+                  "color": "#DDD",
+                  "width": 0
+                },
+                "showscale": false,
+                "size": 3,
+                "sizemin": 3,
+                "sizemode": "diameter",
+                "sizeref": 0.2,
+                "symbol": "circle"
+              }
+            },
+            "show": {
+              "line": true,
+              "lines": false,
+              "markers": true
+            }
+          },
+          {
+            "mapping": {
+              "color": "charging_process_id",
+              "x": "B - SOC [%]",
+              "y": "B - Avg Power [kW]"
+            },
+            "name": "Median Power",
+            "settings": {
+              "color_option": "solid",
+              "line": {
+                "color": "#FF7383",
+                "dash": "solid",
+                "shape": "linear",
+                "width": 2
+              },
+              "marker": {
+                "color": "#33B5E5",
+                "colorscale": "Reds",
+                "line": {
+                  "color": "#DDD",
+                  "width": 0
+                },
+                "showscale": false,
+                "size": 2,
+                "sizemin": 3,
+                "sizemode": "diameter",
+                "sizeref": 0.2,
+                "symbol": "circle"
+              }
+            },
+            "show": {
+              "line": true,
+              "lines": true,
+              "markers": false
+            }
+          }
+        ]
+      },
+      "pluginVersion": "7.5.11",
+      "targets": [
+        {
+          "alias": "",
+          "datasource": "TeslaMate",
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n  c.battery_level as \"SOC [%]\",\r\n  round(avg(c.charger_power), 0) as \"Power [kW]\",\r\n  c.charging_process_id as \"charging_process_id\",\r\n  COALESCE(g.name, a.name) || ' ' || to_char(c.date, 'YYYY-MM-dd') as \"Charge\"\r\nFROM\r\n  charges c\r\nJOIN charging_processes p ON p.id = c.charging_process_id \r\nJOIN addresses a ON a.id = p.address_id\r\nLEFT JOIN geofences g ON g.id = p.geofence_id\r\nWHERE\r\n  $__timeFilter(date)\r\n AND p.car_id = $car_id\r\n AND charger_power > 0\r\n AND c.fast_charger_present\r\nGROUP BY c.battery_level, c.charging_process_id, a.name, g.name, to_char(c.date, 'YYYY-MM-dd')",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "datasource": "TeslaMate",
+          "format": "table",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  c.battery_level as \"B - SOC [%]\",\n  PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY charger_power) as \"B - Avg Power [kW]\"\nFROM\n  charges c\njoin\n  charging_processes p ON p.id = c.charging_process_id \nWHERE\n  $__timeFilter(date)\n AND p.car_id = $car_id\n AND charger_power > 0\n AND c.fast_charger_present\nGROUP BY battery_level",
+          "refId": "B",
+          "select": [
+            [
+              {
+                "params": [
+                  "efficiency"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "cars",
+          "timeColumn": "inserted_at",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "DC Charging Curve",
+      "type": "natel-plotly-panel",
+      "version": 1
     },
     {
       "datasource": "TeslaMate",
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "align": null
+            "align": "auto",
+            "displayMode": "auto"
           },
           "mappings": [],
           "thresholds": {
@@ -1052,22 +1291,22 @@
         "h": 18,
         "w": 3,
         "x": 0,
-        "y": 23
+        "y": 39
       },
       "id": 2,
       "links": [],
       "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "7.1.4",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
-        }
-      },
+      "pluginVersion": "8.4.5",
       "targets": [
         {
           "format": "table",
@@ -1104,7 +1343,8 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "align": null
+            "align": "auto",
+            "displayMode": "auto"
           },
           "mappings": [],
           "thresholds": {
@@ -1192,22 +1432,22 @@
         "h": 18,
         "w": 3,
         "x": 3,
-        "y": 23
+        "y": 39
       },
       "id": 13,
       "links": [],
       "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "7.1.4",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
-        }
-      },
+      "pluginVersion": "8.4.5",
       "targets": [
         {
           "format": "table",
@@ -1244,7 +1484,8 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "align": null
+            "align": "auto",
+            "displayMode": "auto"
           },
           "mappings": [],
           "thresholds": {
@@ -1300,20 +1541,20 @@
         "h": 18,
         "w": 9,
         "x": 6,
-        "y": 23
+        "y": 39
       },
       "id": 4,
       "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
         "showHeader": true
       },
-      "pluginVersion": "7.1.4",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
-        }
-      },
+      "pluginVersion": "8.4.5",
       "targets": [
         {
           "format": "table",
@@ -1342,8 +1583,6 @@
           ]
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Top Charging Stations (Charged)",
       "type": "table"
     },
@@ -1352,7 +1591,8 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "align": null
+            "align": "auto",
+            "displayMode": "auto"
           },
           "mappings": [],
           "thresholds": {
@@ -1412,20 +1652,20 @@
         "h": 18,
         "w": 9,
         "x": 15,
-        "y": 23
+        "y": 39
       },
       "id": 6,
       "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
         "showHeader": true
       },
-      "pluginVersion": "7.1.4",
-      "scopedVars": {
-        "car_id": {
-          "selected": true,
-          "text": "1",
-          "value": "1"
-        }
-      },
+      "pluginVersion": "8.4.5",
       "targets": [
         {
           "format": "table",
@@ -1456,14 +1696,12 @@
           ]
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Top Charging Stations (Cost)",
       "type": "table"
     }
   ],
   "refresh": false,
-  "schemaVersion": 26,
+  "schemaVersion": 35,
   "style": "dark",
   "tags": [
     "tesla"
@@ -1471,33 +1709,30 @@
   "templating": {
     "list": [
       {
-        "allValue": null,
         "current": {
           "selected": false,
-          "text": "1",
-          "value": "1"
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": "TeslaMate",
-        "definition": "SELECT name AS __text, id AS __value FROM cars;",
+        "definition": "SELECT name AS __text, id AS __value FROM cars ORDER BY display_priority ASC, name ASC;",
         "hide": 2,
         "includeAll": true,
         "label": "Car",
         "multi": false,
         "name": "car_id",
         "options": [],
-        "query": "SELECT name AS __text, id AS __value FROM cars;",
+        "query": "SELECT name AS __text, id AS __value FROM cars ORDER BY display_priority ASC, name ASC;",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
-        "sort": 5,
+        "sort": 0,
         "tagValuesQuery": "",
-        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
       },
       {
-        "allValue": null,
         "current": {
           "selected": false,
           "text": "http://localhost:4000",
@@ -1517,13 +1752,11 @@
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
-        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
       },
       {
-        "allValue": null,
         "current": {
           "selected": false,
           "text": "km",
@@ -1533,7 +1766,6 @@
         "definition": "select unit_of_length from settings limit 1;",
         "hide": 2,
         "includeAll": false,
-        "label": null,
         "multi": false,
         "name": "length_unit",
         "options": [],
@@ -1543,7 +1775,6 @@
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
-        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
@@ -1583,5 +1814,6 @@
   "timezone": "",
   "title": "Charging Stats",
   "uid": "-pkIkhmRz",
-  "version": 1
+  "version": 1,
+  "weekStart": ""
 }
