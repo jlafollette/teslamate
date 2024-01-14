@@ -298,7 +298,15 @@ defmodule TeslaApi.Vehicle.State do
       :timestamp,
       :valet_mode,
       :valet_pin_needed,
-      :vehicle_name
+      :vehicle_name,
+      :tpms_pressure_fl,
+      :tpms_pressure_fr,
+      :tpms_pressure_rl,
+      :tpms_pressure_rr,
+      :tpms_soft_warning_fl,
+      :tpms_soft_warning_fr,
+      :tpms_soft_warning_rl,
+      :tpms_soft_warning_rr
     ]
 
     defmodule SoftwareUpdate do
@@ -358,7 +366,15 @@ defmodule TeslaApi.Vehicle.State do
         sentry_mode_available: vehicle_state["sentry_mode_available"],
         smart_summon_available: vehicle_state["smart_summon_available"],
         valet_pin_needed: vehicle_state["valet_pin_needed"],
-        vehicle_name: vehicle_state["vehicle_name"]
+        vehicle_name: vehicle_state["vehicle_name"],
+        tpms_pressure_fl: vehicle_state["tpms_pressure_fl"],
+        tpms_pressure_fr: vehicle_state["tpms_pressure_fr"],
+        tpms_pressure_rl: vehicle_state["tpms_pressure_rl"],
+        tpms_pressure_rr: vehicle_state["tpms_pressure_rr"],
+        tpms_soft_warning_fl: vehicle_state["tpms_soft_warning_fl"],
+        tpms_soft_warning_fr: vehicle_state["tpms_soft_warning_fr"],
+        tpms_soft_warning_rl: vehicle_state["tpms_soft_warning_rl"],
+        tpms_soft_warning_rr: vehicle_state["tpms_soft_warning_rr"]
       }
     end
   end

@@ -30,7 +30,7 @@ defmodule TeslaMate.Vehicles.Vehicle do
   @asleep_interval 30
   @driving_interval 2.5
 
-  @drive_timout_min 15
+  @drive_timeout_min 15
 
   # Static
 
@@ -218,7 +218,9 @@ defmodule TeslaMate.Vehicles.Vehicle do
 
   def handle_event({:call, from}, :resume_logging, {state, _interval}, data)
       when state in [:asleep, :offline] do
-    Logger.info("Expecting imminent wakeup. Increasing polling frequency ...", car_id: data.car.id)
+    Logger.info("Expecting imminent wakeup. Increasing polling frequency ...",
+      car_id: data.car.id
+    )
 
     {:next_state, {state, 1}, data, [{:reply, from, :ok}, {:next_event, :internal, :fetch}]}
   end
@@ -292,7 +294,7 @@ defmodule TeslaMate.Vehicles.Vehicle do
           {%Vehicle{drive_state: %Drive{timestamp: now}},
            %Data{last_response: %Vehicle{drive_state: %Drive{timestamp: last}}}}
           when is_number(now) and is_number(last) and now < last ->
-            drive_states = %{now: vehicle.drive_state, last: data.last_response.drive_state}
+            drive_states = [now: vehicle.drive_state, last: data.last_response.drive_state]
 
             Logger.warning(
               "Discarded stale fetch result: #{inspect(drive_states, pretty: true)}",
@@ -319,7 +321,7 @@ defmodule TeslaMate.Vehicles.Vehicle do
       {:ok, %Vehicle{state: state} = vehicle} when state in ["offline", "asleep"] ->
         data =
           with %Data{last_response: nil} <- data do
-            {last_response, geofence} = restore_last_knwon_values(vehicle, data)
+            {last_response, geofence} = restore_last_known_values(vehicle, data)
             %Data{data | last_response: last_response, geofence: geofence}
           end
 
@@ -413,7 +415,7 @@ defmodule TeslaMate.Vehicles.Vehicle do
 
     case stream_data do
       %Stream.Data{} when stale_stream_data? ->
-        Logger.warn("Received stale stream data: #{inspect(stream_data)}", car_id: data.car.id)
+        Logger.warning("Received stale stream data: #{inspect(stream_data)}", car_id: data.car.id)
         :keep_state_and_data
 
       %Stream.Data{shift_state: shift_state} when shift_state in ~w(D N R) ->
@@ -464,7 +466,7 @@ defmodule TeslaMate.Vehicles.Vehicle do
 
     case stream_data do
       %Stream.Data{} when stale_stream_data? ->
-        Logger.warn("Received stale stream data: #{inspect(stream_data)}", car_id: data.car.id)
+        Logger.warning("Received stale stream data: #{inspect(stream_data)}", car_id: data.car.id)
         :keep_state_and_data
 
       %Stream.Data{shift_state: shift_state} when shift_state in ~w(D N R) ->
@@ -919,7 +921,7 @@ defmodule TeslaMate.Vehicles.Vehicle do
     offline_since = parse_timestamp(last.drive_state.timestamp)
 
     case diff_seconds(DateTime.utc_now(), offline_since) / 60 do
-      min when min >= @drive_timout_min ->
+      min when min >= @drive_timeout_min ->
         timeout_drive(drive, data)
 
         {:next_state, {:driving, {:offline, last}, nil},
@@ -968,7 +970,7 @@ defmodule TeslaMate.Vehicles.Vehicle do
         {:next_state, :start, %Data{data | last_used: DateTime.utc_now()},
          {:next_event, :internal, {:update, {:online, now}}}}
 
-      not has_gained_range? and offline_min >= @drive_timout_min ->
+      not has_gained_range? and offline_min >= @drive_timeout_min ->
         unless is_nil(drv), do: timeout_drive(drv, data)
 
         {:next_state, :start, %Data{data | last_used: DateTime.utc_now()},
@@ -1125,7 +1127,7 @@ defmodule TeslaMate.Vehicles.Vehicle do
 
   # Private
 
-  defp restore_last_knwon_values(vehicle, data) do
+  defp restore_last_known_values(vehicle, data) do
     with %Vehicle{drive_state: nil, charge_state: nil, climate_state: nil} <- vehicle,
          %Log.Position{} = position <- call(data.deps.log, :get_latest_position, [data.car]) do
       drive = %Drive{
@@ -1261,7 +1263,11 @@ defmodule TeslaMate.Vehicles.Vehicle do
       is_front_defroster_on: vehicle.climate_state.is_front_defroster_on,
       battery_heater_on: vehicle.charge_state.battery_heater_on,
       battery_heater: vehicle.climate_state.battery_heater,
-      battery_heater_no_power: vehicle.climate_state.battery_heater_no_power
+      battery_heater_no_power: vehicle.climate_state.battery_heater_no_power,
+      tpms_pressure_fl: vehicle.vehicle_state.tpms_pressure_fl,
+      tpms_pressure_fr: vehicle.vehicle_state.tpms_pressure_fr,
+      tpms_pressure_rl: vehicle.vehicle_state.tpms_pressure_rl,
+      tpms_pressure_rr: vehicle.vehicle_state.tpms_pressure_rr
     }
 
     elevation =
@@ -1348,6 +1354,12 @@ defmodule TeslaMate.Vehicles.Vehicle do
         {:keep_state, %Data{data | last_used: DateTime.utc_now()},
          [broadcast_summary(), schedule_fetch(30 * i, data)]}
 
+      {:error, :dogmode} ->
+        if suspend?, do: Logger.warning("Dog Mode is enabled ...", car_id: car.id)
+
+        {:keep_state, %Data{data | last_used: DateTime.utc_now()},
+         [broadcast_summary(), schedule_fetch(30 * i, data)]}
+
       {:error, :user_present} ->
         if suspend?, do: Logger.warning("User present ...", car_id: car.id)
 
@@ -1406,6 +1418,9 @@ defmodule TeslaMate.Vehicles.Vehicle do
 
       {%Vehicle{climate_state: %Climate{is_preconditioning: true}}, _} ->
         {:error, :preconditioning}
+
+      {%Vehicle{climate_state: %Climate{climate_keeper_mode: "dog"}}, _} ->
+        {:error, :dogmode}
 
       {%Vehicle{vehicle_state: %VehicleState{sentry_mode: true}}, _} ->
         {:error, :sentry_mode}
@@ -1519,7 +1534,7 @@ defmodule TeslaMate.Vehicles.Vehicle do
 
           %Log.Update{version: last_vsn} when is_binary(last_vsn) ->
             if normalize_version(last_vsn) < normalize_version(vsn) do
-              Logger.info("Logged missing software udpate: #{vsn}", car_id: car.id)
+              Logger.info("Logged missing software update: #{vsn}", car_id: car.id)
 
               {:ok, _} =
                 call(data.deps.log, :insert_missed_update, [car, vsn, [date: parse_timestamp(ts)]])

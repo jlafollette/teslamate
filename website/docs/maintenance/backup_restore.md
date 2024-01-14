@@ -1,13 +1,16 @@
 ---
 title: Backup and Restore
 ---
+:::note
+If you are using `docker-compose`, you are using Docker Compose v1, which has been deprecated. Docker Compose commands refer to Docker Compose v2. Consider upgrading your docker setup, see [Migrate to Compose V2](https://docs.docker.com/compose/migrate/)
+:::
 
 ## Backup
 
 Create backup file `teslamate.bck`:
 
 ```bash
-docker-compose exec -T database pg_dump -U teslamate teslamate > /backuplocation/teslamate.bck
+docker compose exec -T database pg_dump -U teslamate teslamate > /backuplocation/teslamate.bck
 ```
 
 :::note
@@ -23,7 +26,7 @@ If you get the error `No such service: database`, update your _docker-compose.ym
 :::
 
 :::note
-If you changed `TM_DB_USER` in the .env file from one of the advanced guides, make sure to replace the first instance of `teslamate` to the value of `TM_DB_USER` in the above command. 
+If you changed `TM_DB_USER` in the .env file from one of the advanced guides, make sure to replace the first instance of `teslamate` to the value of `TM_DB_USER` in the above command.
 :::
 
 ## Restore
@@ -34,10 +37,10 @@ Replace the default `teslamate` value below with the value defined in the .env f
 
 ```bash
 # Stop the teslamate container to avoid write conflicts
-docker-compose stop teslamate
+docker compose stop teslamate
 
-# Drop existing data and reinitialize
-docker-compose exec -T database psql -U teslamate << .
+# Drop existing data and reinitialize (Don't forget to replace first teslamate if using different TM_DB_USER)
+docker compose exec -T database psql -U teslamate teslamate << .
 drop schema public cascade;
 create schema public;
 create extension cube;
@@ -51,8 +54,8 @@ CREATE OR REPLACE FUNCTION public.ll_to_earth(float8, float8)
 .
 
 # Restore
-docker-compose exec -T database psql -U teslamate -d teslamate < teslamate.bck
+docker compose exec -T database psql -U teslamate -d teslamate < teslamate.bck
 
 # Restart the teslamate container
-docker-compose start teslamate
+docker compose start teslamate
 ```

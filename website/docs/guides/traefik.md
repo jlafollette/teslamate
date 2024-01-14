@@ -62,7 +62,7 @@ services:
       - all
 
   database:
-    image: postgres:13
+    image: postgres:15
     restart: always
     environment:
       - POSTGRES_USER=${TM_DB_USER}
@@ -110,7 +110,7 @@ services:
       - mosquitto-data:/mosquitto/data
 
   proxy:
-    image: traefik:v2.4
+    image: traefik:v2.7
     restart: always
     command:
       - "--global.sendAnonymousUsage=false"
@@ -171,7 +171,7 @@ teslamate:$2y$10$f7PB3UF3PNzqMIXZmf1dIefOkrv/15Xt6Xw3pzc6mkS/B5qoWBdAG
 
 ## Usage
 
-Start the stack with `docker-compose up -d`.
+Start the stack with `docker compose up -d`.
 
 1. Open the web interface https://teslamate.example.com
 2. Sign in with your Tesla account
@@ -180,5 +180,5 @@ Start the stack with `docker-compose up -d`.
 > If you have difficulty logging into your Grafana, e.g. you cannot login with the credentials from either the simple setup or the values stored in the .env file, reset the admin password with the following command:
 
 ```
-docker-compose exec grafana grafana-cli admin reset-admin-password
+docker compose exec grafana grafana-cli admin reset-admin-password
 ```

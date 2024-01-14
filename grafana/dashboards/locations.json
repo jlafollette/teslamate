@@ -372,7 +372,6 @@
           },
           "displayName": "$__cell_0",
           "mappings": [],
-          "max": 100,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -450,7 +449,6 @@
           },
           "displayName": "$__cell_0",
           "mappings": [],
-          "max": 100,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -971,7 +969,7 @@
                   {
                     "targetBlank": true,
                     "title": "",
-                    "url": "[[base_url:raw]]/geo-fences/${__data.fields.id.numeric}/edit"
+                    "url": "[[base_url:raw]]/geo-fences/${__data.fields.id.numeric:raw}/edit"
                   }
                 ]
               },
@@ -1055,7 +1053,7 @@
       "type": "table"
     }
   ],
-  "schemaVersion": 34,
+  "schemaVersion": 36,
   "style": "dark",
   "tags": [
     "tesla"
@@ -1074,7 +1072,7 @@
         },
         "datasource": "TeslaMate",
         "definition": "SELECT name AS __text, id AS __value FROM cars ORDER BY display_priority ASC, name ASC;",
-        "hide": 2,
+        "hide": 1,
         "includeAll": true,
         "label": "Car",
         "multi": true,

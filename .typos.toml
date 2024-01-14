@@ -1,0 +1,11 @@
+[default.extend-words]
+mosquitto = "mosquitto"
+HASS = "HASS"
+Juni = "Juni"
+
+[type.po]
+extend-glob = ["*.po"]
+check-file = false
+
+[files]
+extend-exclude = ["*.json.example"]

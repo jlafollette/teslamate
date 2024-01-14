@@ -223,6 +223,21 @@
           </div>
         </div>
       </div>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <%= label f, :unit_of_pressure, gettext("Tire Pressure"), class: "label" %>
+        </div>
+        <div class="field-body">
+          <div class="field">
+            <div class="control">
+              <div class="select is-fullwidth">
+                <%= select(f, :unit_of_pressure, [:bar, :psi]) %>
+              </div>
+            </div>
+            <p class="help is-danger"><%= error_tag(f, :unit_of_pressure) %></p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -268,7 +283,7 @@
               <th align="right"><%= gettext("Version") %></th>
               <td><%= Application.spec(:teslamate, :vsn) %><strong><%=
                 if @update do
-                  vsn = link @update, to: "https://github.com/adriankumpf/teslamate/releases",
+                  vsn = link @update, to: "https://github.com/teslamate-org/teslamate/releases",
                                       target: "_blank", rel: "noopener noreferrer"
 
                   [" (", gettext("Update available"), ": ", vsn, ")"]
@@ -277,7 +292,7 @@
             </tr>
             <tr>
               <th align="right"><%= gettext("GitHub") %></th>
-              <td><%= link "adriankumpf/teslamate", to: "https://github.com/adriankumpf/teslamate", target: "_blank", rel: "noopener noreferrer" %></td>
+              <td><%= link "teslamate-org/teslamate", to: "https://github.com/teslamate-org/teslamate", target: "_blank", rel: "noopener noreferrer" %></td>
             </tr>
             <tr>
               <th align="right"><%= gettext("Documentation") %></th>

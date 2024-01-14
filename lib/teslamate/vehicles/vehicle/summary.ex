@@ -6,14 +6,15 @@ defmodule TeslaMate.Vehicles.Vehicle.Summary do
   alias TeslaMate.Log.Car
 
   defstruct ~w(
-    car display_name state since healthy latitude longitude heading battery_level usable_battery_level
+    car display_name state since healthy latitude longitude heading battery_level charging_state usable_battery_level
     ideal_battery_range_km est_battery_range_km rated_battery_range_km charge_energy_added
     speed outside_temp inside_temp is_climate_on is_preconditioning locked sentry_mode
     plugged_in scheduled_charging_start_time charge_limit_soc charger_power windows_open doors_open
     odometer shift_state charge_port_door_open time_to_full_charge charger_phases
     charger_actual_current charger_voltage version update_available update_version is_user_present geofence
     model trim_badging exterior_color wheel_type spoiler_type trunk_open frunk_open elevation power
-    charge_current_request charge_current_request_max
+    charge_current_request charge_current_request_max tpms_pressure_fl tpms_pressure_fr tpms_pressure_rl tpms_pressure_rr
+    tpms_soft_warning_fl tpms_soft_warning_fr tpms_soft_warning_rl tpms_soft_warning_rr climate_keeper_mode
   )a
 
   def into(nil, %{state: :start, healthy?: healthy?, car: car}) do
@@ -83,6 +84,7 @@ defmodule TeslaMate.Vehicles.Vehicle.Summary do
 
       # Charge State
       battery_level: charge(vehicle, :battery_level),
+      charging_state: charge(vehicle, :charging_state),
       charge_current_request: charge(vehicle, :charge_current_request),
       charge_current_request_max: charge(vehicle, :charge_current_request_max),
       charge_energy_added: charge(vehicle, :charge_energy_added),
@@ -104,6 +106,7 @@ defmodule TeslaMate.Vehicles.Vehicle.Summary do
       # Climate State
       is_climate_on: get_in_struct(vehicle, [:climate_state, :is_climate_on]),
       is_preconditioning: get_in_struct(vehicle, [:climate_state, :is_preconditioning]),
+      climate_keeper_mode: get_in_struct(vehicle, [:climate_state, :climate_keeper_mode]),
       outside_temp: get_in_struct(vehicle, [:climate_state, :outside_temp]),
       inside_temp: get_in_struct(vehicle, [:climate_state, :inside_temp]),
 
@@ -118,7 +121,15 @@ defmodule TeslaMate.Vehicles.Vehicle.Summary do
       is_user_present: get_in_struct(vehicle, [:vehicle_state, :is_user_present]),
       version: version(vehicle),
       update_available: update_available(vehicle),
-      update_version: update_version(vehicle)
+      update_version: update_version(vehicle),
+      tpms_pressure_fl: get_in_struct(vehicle, [:vehicle_state, :tpms_pressure_fl]),
+      tpms_pressure_fr: get_in_struct(vehicle, [:vehicle_state, :tpms_pressure_fr]),
+      tpms_pressure_rl: get_in_struct(vehicle, [:vehicle_state, :tpms_pressure_rl]),
+      tpms_pressure_rr: get_in_struct(vehicle, [:vehicle_state, :tpms_pressure_rr]),
+      tpms_soft_warning_fl: get_in_struct(vehicle, [:vehicle_state, :tpms_soft_warning_fl]),
+      tpms_soft_warning_fr: get_in_struct(vehicle, [:vehicle_state, :tpms_soft_warning_fr]),
+      tpms_soft_warning_rl: get_in_struct(vehicle, [:vehicle_state, :tpms_soft_warning_rl]),
+      tpms_soft_warning_rr: get_in_struct(vehicle, [:vehicle_state, :tpms_soft_warning_rr])
     }
   end
 

@@ -1,37 +1,258 @@
 # Changelog
 
-## unreleased
+## [unreleased]
 
-### Improvements and Bug Fixes
+### New features
 
-🔓 Encrypt API tokens
-
-> During the database migration a randomly generated key will be used encrypt the tokens if no `ENCRYPTION_KEY` environment variable was provided.
->
-> If the application is started without the presence of an `ENCRYPTION_KEY` (or if the key failed to decrypt the existing tokens), the UI will display a warning with further instructions.
-
-- Bump Grafana to 8.4.1
-- Add `charge_current_request` and `charge_current_request_max` MQTT topics
-- Add detection of refresh Model X (2022) (#2455 - @cwanja)
+### Improvements and bug fixes
 
 #### Dashboards
 
-- Add DC charge curve scatter graph (#2093 - @ToniA)
+#### Translations
+
+#### Documentation
+
+## [1.28.2] - 2023-11-27
+
+### New features
+
+### Improvements and bug fixes
+
+- grafana: support DATABASE_SSL_MODE (#3498 - @simonsmh)
+- Support server_name_indication for ssl (#3497 - @simonsmh)
+- grafana: Fix Dashboard dropdown link display (#3501 - @oivindoh)
+- Ci: GHCR Purge success even if package doesn't exist (#3480 - @jlestel and #3504 - @JakobLichterfeld)
+
+#### Dashboards
+
+#### Translations
+
+#### Documentation
+
+## [1.28.1] - 2023-11-26
+
+### New features
+
+### Improvements and bug fixes
+
+- Fix display version in settings
+
+#### Dashboards
+
+#### Translations
+
+#### Documentation
+
+## [1.28.0] - 2023-11-26
+
+Note: First release as @teslamate-org organization.
+
+### New features
+
+- Added tire low pressure icon to teslamate web (#3424 - @NirKli)
+- Add charging_state to VehicleSummary (#3471 - @brianmay)
+
+### Improvements and bug fixes
+
+- UI: sync meta theme-color with header background color for iOS status bar (#2840 - @libotony)
+- Linting in dashboard links (#3443 - @jlestel)
+- Update Grafana to 10.1.2 (#3455 - @swiffer)
+- CI: Build PR images on GHCR, so every PR will have a dedicated dockerfile for testing purpose (#3445, #3480, #3481, #3491 -@jlestel)
+- Update to Nodejs 20 (#3477 - @PhilThurston)
+- Add credo lint support for static code analysis (#3452 - @brianmay)
+
+#### Dashboards
+
+- Fix link to Charge Level dashboard (#3263 - @Sjorsa)
+- Add LFP variants of Grafana dashboards (#3311 - @eden881)
+- Average cost stat in stats dashboard (#3030 - @fmossott)
+- Odometer in Charges dashboard (#3463 - @DrMichael)
+- Use built-in Grafana visuals instead of plugins (#3439 - @oivindoh and @swiffer)
+- Ensure that dashboards can be modified after import (#3454 - @swiffer)
+- Migrate projected range to TimeSeries (#3454 - @swiffer)
+
+#### Translations
+
+- There is nothing new here.
+
+#### Documentation
+
+- Gaussmeter units no longer for sale, #3419 - @LelandSindt
+- Docker backup restore note about update command when using different TM_DB_USER (#3291 - @tsongalin)
+- Update FreeBSD installation instructions (#3277 - @uqs)
+- Updated Docker Compose instructions (#3320 - @Dulanic)
+- Update HA integration docs with TPMS sensors and examples (#2845 - @marspath)
+- Fix code style in FreeBSD section (#3461 and #3462 - @ivanovd)
+- Advise that docker-compose v1 is EOL and to upgrade to v2 (#3472 - @cwanja)
+- Fix tpms bar sensors name in template for psi (#3490 - @virtualm2000)
+
+## [1.27.4] - 2023-11-12
+
+Note: TeslaMate moved to the new @teslamate-org organization.
+
+### Improvements and Bug Fixes
+
+- Add endpoints query param to `vehicle_data` request to [reflect changes](https://developer.tesla.com/docs/fleet-api?shell#vehicle_data) to the API (#3398 - @swiffer)
+- Remove donation links
+- Fix warnings on Elixir 1.16
+- Upgrade Grafana to 9.5
+- Trim whitespace from geofence names
+- Support self-signed certificates via (`DATABASE_SSL_CA_CERT_FILE`)
+- Use preferred tile.openstreetmap.org URL (#3368)
+- Update dependencies
+
+#### Dashboards
+
+- Charges: Mark `end_date` as `dateTimeAsLocal` (#3033 - @DrMichae)
+- Add Battery Health dashboard (#3059 - @jheredianet)
+- Show all vehicles on drive stats dashboard (#3342 - @yoyostile)
+- Updates: Fix for div by zero error (#3289 - @Dulanic)
+- Show location name in charge details (#3294 - @DrMichael)
+- Fix broken links when orgId is not 1 (#3380 - @jlestel)
+- Update query to get car efficiency on Battery Health dashboard (#3245 - @jheredianet)
+
+#### Translations
+
+- Updated Spanish translation (#3244 - @jheredianet)
+
+#### Documentation
+
+- Update docs to use Docker Compose V2 (#3025 - @eden881)
+- Update FreeBSD instructions (#3394 - @ivanovd)
+- Add Tesla-YouQ project (#3347 - @brchri)
+
+## [1.27.3] - 2023-06-12
+
+### Improvements and Bug Fixes
+
+- Read the vehicle name from the `vehicle_data` response as Tesla has made [some changes](https://github.com/timdorr/tesla-api/issues/728) to the API
+- Add composite index to position and drop drive_id index (#3186 - @IlyaDiallo)
+- Bump Grafana to 8.5.26
+- Ship Docker image with OTP 26 (this should improve performance on ARM devices)
+- Optimize automatic Docker image builds
+
+#### Dashboards
+
+- Update drive-details.json missing dataSource for pressure units (#3225 - @OrangeBean)
+- Bump pr0ps-trackmap-panel to 2.1.4 (#3076 - @Obihoernchen)
+
+#### Translations
+
+- Fix Korean translation (#3126 - @nanishin)
+
+#### Documentation
+
+- Update docs to manually remove vehicle (#3075 - @cwanja)
+- Update Project: Tesla Home Assistant Integration (#3194 - @Megabytemb)
+- Updated menu route to Download TeslaFi Data (#3218 - @helmo)
+
+## [1.27.2] - 2023-01-13
+
+### Improvements and Bug Fixes
+
+- Bump pr0ps-trackmap-panel to 2.1.3 (fixes #2770)
+- Bump grafana to 8.5.15
+- Fix GPX format (#2925 - @martinh2011)
+- Change esbuild target to es2017
+- Update Elixir and frontend dependencies
+- Update GH action workflows
+
+#### Dashboards
+
+- Charging Stats: Update the filter for superchargers (#2832 - @sultantariq)
+
+#### Translations
+
+- Add Ukrainian translations (#3039 - @ZeusF1)
+- Update Korean translations (#2898 - @zipizigi)
+- Update Chinese (traditional) translations (#2852 - @occultsound)
+- Update Chinese translations (#2855 - @JhouXerox)
+- Update French translations (#2844 - @CrowMash)
+
+#### Documentation
+
+- Fix typo (#2843 - @CrowMash)
+- Improve FreeBSD installation documentation (#2885 - @victori)
+- Fix tesla_power unit from W to kW (#3024 - @enzo2)
+- Added "Custom Grafana Dashboards" to project list (#3056 - @CarlosCuezva)
+
+## [1.27.1] - 2022-07-22
+
+### Improvements and Bug Fixes
+
+- Add setting to select tire pressure units
+- Fix `Protocol 'inet_tcp': register/listen error: econnrefused` error (#2771 - @manuduarte)
+- Bump minimum supported Elixir version to 1.12
+- Improve handling of invalid API tokens
+
+#### Dashboards
+
+- Charging Stats: Include SuC geofences to calculate charging cost
+
+## [1.27.0] - 2022-07-15
+
+### 🔓 Encryption of API tokens
+
+To ensure that the Tesla API tokens are stored securely, **an encryption key must be provided via the `ENCRYPTION_KEY` environment variable**.
+
+If you use a `docker-compose.yml` file to run TeslaMate, add a line with the `ENCRYPTION_KEY` to the `environment` section or check out the updated installation guiddes on [docs.teslamate.org](https://docs.teslamate.org):
+
+```yaml
+services:
+  teslamate:
+    image: teslamate/teslamate:latest
+    environment:
+      - ENCRYPTION_KEY=your_secret_encryption_key
+      # ...
+```
+
+If no `ENCRYPTION_KEY` environment variable is provided when running the database migrations a **randomly generated key will be set for you** to encrypt the tokens. In that case, a warning with further instructions will be displayed.
+
+### Improvements and Bug Fixes
+
+- Add `charge_current_request` and `charge_current_request_max` MQTT topics
+- Add detection of refresh Model X (2022) (#2455 - @cwanja)
+- Restart streaming API process if token expired
+- Do not start erlang's EPMD service
+- Store vehicle marketing names in the database
+- Allow customizing the default geofence via the `DEFAULT_GEOFENCE` environment variable (#2564)
+- Bump Grafana to 8.5.6
+
+#### Dashboards
+
 - Add datasource to table and map panels (#2391- @andrewjw)
+- Charge Details: Ensure that battery heater is shown when active during charging (#2527 - @woyteck1)
+- Charging Stats, Charges: Add average cost per kWh to charging stats (#2693 - @yoyostile)
+- Charging Stats, Charging Details: Add Charging curve (#2093 - @ToniA, #2152 - @fmossott)
 - Charging Stats: Add panel with the cost of charges at SuC (#2448 - @carloscuezva)
-- Drive Details: Add elevation summary (#2449 - @coreGreenberet)
+- Charging Stats: Fix for better "Charge deltas" when the charging process is interrupted and re-started (#2566, #2656 - @nicoladefranceschi)
 - Charging Stats: Set Y-Axis max of heatmap to 100 (#2461 - @DrMichael)
+- Charging Stats: Update Charging Stats panel styling (#2481 - @cwanja)
+- Drive Details: Add elevation summary (#2449 - @coreGreenberet)
+- Drive Details: Record the tire pressure which was made available by Tesla in the 2022.4 SW release (#2706 - @NirKli)
+- Drive Details: Set elevation units on axis
 - Drive Stats: Optimize query to estimate mileage calculation (#2464 - @coreGreenberet )
+- Locations: Let the gauge scale up to the maximum value (#2647 - @DrMichael)
+- States: Update States top row panels height (#2487 - @cwanja)
+- Timeline: Fix links (#2601 - @DrMichael)
 - Trip: Render Trip piechart legend (#2473 - @cwanja)
+- Migrate dashboards to the new timeseries panels
+- Change unit of boolean fields
 
 #### Translations
 
 - Update Chinse translation (#2479 - @AemonCao)
+- Add missing Swedish translation (#2731 - @tobiasehlert)
 
 #### Documentation
 
 - Add ProxyPreserveHost On to the Grafana entries in Apache2 config (#2471 - @DrMichael)
 - Node-RED: Fix typo (#2410 - @baylanger)
+- Update to projects page (TeslaMate-ABRP) (#2518 - @fetzu)
+- Update HomeAssistant Integration examples for HA 2022.6 (#2704 - @star114)
+- HomeAssistant Integration: enhance km to mi conversion / add timestamp class to charge time (#2735 - @dcod3d)
+- Add FAQ around Docker timestamp logs (#2655 - @cwanja)
+- Add HomeAssistant notification example (#2712 - @brombomb)
 
 ## [1.26.1] - 2022-01-28
 
@@ -74,8 +295,8 @@
 > ⚠️ Manually managed Grafana instances have to be upgraded to v8.3.4 or higher!
 
 - All table panels have been migrated to the new table component
-  - This brings a bunch of improvments including an improved experience on small screen sizes
-  - The date colums now use a local format depending on your browser language setting
+  - This brings a bunch of improvements including an improved experience on small screen sizes
+  - The date columns now use a local format depending on your browser language setting
 - The pie chart panels have been migrated to the new native pie charts component
 - The discrete panels have been replaced by the native state timeline panel
 
@@ -120,7 +341,7 @@ Disable anonymous logins to Grafana by default (when using the `teslamate/grafan
 
 - Add Apple mobile web app capable meta tag ([#2128](https://github.com/adriankumpf/teslamate/pull/2128))
 - Add NOT NULL constraint to the charging_processes.start_date column
-- Add workaround for an error that occured when the OS does not return the current date and time
+- Add workaround for an error that occurred when the OS does not return the current date and time
 - Display marketing names (again). This was necessary due to an API change.
   - Add Mid-Range Model 3 ([#2057](https://github.com/adriankumpf/teslamate/pull/2057) by [RickyRomero](https://github.com/RickyRomero))
 - Show the token sign-up form by default
@@ -298,7 +519,7 @@ Users who are already signed in in do not have to worry about it. TeslaMate will
 
 - Add option to sign in with existing API tokens
 - Avoid false `plugged_in` events ([#1423](https://github.com/adriankumpf/teslamate/pull/1423) by [brianmay](https://github.com/brianmay))
-- Handle distinct OSM IDs gracefully when chaning the address language
+- Handle distinct OSM IDs gracefully when changing the address language
 - Set another user agent for auth requests.
   - ⚠️ _This fixes timeouts when signing in for the time being. Most users who are affected reported using a cloud hosting service. Expect this to break anytime Tesla decides to block this type of traffic coming from these providers._
 - Update user agent used for API requests to GitHub and OpenStreetMap
@@ -316,7 +537,7 @@ Users who are already signed in in do not have to worry about it. TeslaMate will
 
 #### Documentation
 
-- Explaing the asleep mode with MCU1 and the non-streaming mode ([#1453](https://github.com/adriankumpf/teslamate/pull/1453) by [ToniA](https://github.com/ToniA))
+- Explaining the asleep mode with MCU1 and the non-streaming mode ([#1453](https://github.com/adriankumpf/teslamate/pull/1453) by [ToniA](https://github.com/ToniA))
 
 ## [1.21.6] - 2021-03-10
 
@@ -1531,6 +1752,15 @@ New users need to sign in via the web interface.
 
 ## [1.0.0] - 2019-07-25
 
+[unreleased]: https://github.com/teslamate-org/teslamate/compare/v1.28.2...HEAD
+[unreleased]: https://github.com/teslamate-org/teslamate/compare/v1.28.1...v1.28.2
+[1.28.0]: https://github.com/teslamate-org/teslamate/compare/v1.28.0...v1.28.1
+[1.28.0]: https://github.com/teslamate-org/teslamate/compare/v1.27.4...v1.28.0
+[1.27.4]: https://github.com/adriankumpf/teslamate/compare/v1.27.3...v1.27.4
+[1.27.3]: https://github.com/adriankumpf/teslamate/compare/v1.27.2...v1.27.3
+[1.27.2]: https://github.com/adriankumpf/teslamate/compare/v1.27.1...v1.27.2
+[1.27.1]: https://github.com/adriankumpf/teslamate/compare/v1.27.0...v1.27.1
+[1.27.0]: https://github.com/adriankumpf/teslamate/compare/v1.26.1...v1.27.0
 [1.26.1]: https://github.com/adriankumpf/teslamate/compare/v1.26.0...v1.26.1
 [1.26.0]: https://github.com/adriankumpf/teslamate/compare/v1.25.2...v1.26.0
 [1.25.2]: https://github.com/adriankumpf/teslamate/compare/v1.25.1...v1.25.2

@@ -5,13 +5,14 @@ defmodule TeslaMate.MixProject do
     [
       app: :teslamate,
       version: version(),
-      elixir: "~> 1.11",
+      elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:gettext] ++ Mix.compilers(),
+      compilers: Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       releases: releases(),
       deps: deps(),
+      dialyzer: dialyzer(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
@@ -35,9 +36,10 @@ defmodule TeslaMate.MixProject do
 
   defp deps do
     [
-      {:castore, "~> 0.1"},
+      {:castore, "~> 1.0"},
       {:ecto_sql, "~> 3.0"},
-      {:ex_cldr, "~> 2.27.0"},
+      {:ex_cldr, "~> 2.37.0"},
+      {:ex_cldr_plugs, "~> 1.0"},
       {:excoveralls, "~> 0.10", only: :test},
       {:finch, "~> 0.3"},
       {:floki, "~> 0.23"},
@@ -55,13 +57,15 @@ defmodule TeslaMate.MixProject do
       {:phoenix_pubsub, "~> 2.0"},
       {:plug_cowboy, "~> 2.0"},
       {:postgrex, ">= 0.0.0"},
-      {:srtm, "~> 0.5"},
+      {:srtm, "~> 0.8.0"},
       {:tesla, "~> 1.4"},
       {:timex, "~> 3.0"},
       {:tortoise, "~> 0.10"},
       {:tzdata, "~> 1.1"},
       {:websockex, "~> 0.4"},
-      {:cloak_ecto, "~> 1.2"}
+      {:cloak_ecto, "~> 1.2"},
+      {:dialyxir, "~> 1.3", only: [:dev], runtime: false},
+      {:credo, "~> 1.7.1", only: [:dev], runtime: false}
     ]
   end
 
@@ -73,6 +77,17 @@ defmodule TeslaMate.MixProject do
       "assets.deploy": ["cmd --cd assets npm run deploy", "phx.digest"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test --no-start"],
       ci: ["format --check-formatted", "deps.unlock --check-unused", "test --raise"]
+    ]
+  end
+
+  defp dialyzer do
+    [
+      plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+      plt_core_path: "priv/plts/",
+      plt_add_apps: [:mix, :ex_unit],
+      plt_ignore_apps: [],
+      ignore_warnings: ".dialyzer_ignore.exs",
+      list_unused_filters: true
     ]
   end
 

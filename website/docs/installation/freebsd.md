@@ -41,36 +41,30 @@ pkg install erlang
 </details>
 
 <details>
-  <summary>Elixir (v1.11+)</summary>
-
-Unfortunately the Elixir part is not well updated in FreeBSD ports.
-Hence the latest supported version for Erlang 21 (latest in FreeBSD ports)
-is Elixir 1.11.
-
-We will need to compile it from source, which is pretty easy though.
+  <summary>Elixir (v1.12+)</summary>
 
 ```bash
-pkg install gmake
-
-mkdir /usr/local/src
-cd /usr/local/src
-git clone https://github.com/elixir-lang/elixir.git
-cd elixir
-git checkout v1.11.4
-gmake clean test
-gmake install
-elixir --version
+pkg install elixir
 ```
 
 </details>
 
 <details>
-  <summary>Postgres (v12+)</summary>
+  <summary>Postgres (v14+)</summary>
 
 ```bash
-pkg install postgresql(12|13)-server
-pkg install postgresql(12|13)-contrib
+pkg install postgresql16-server-16.0
+pkg install postgresql16-contrib-16.0
 echo postgres_enable="yes" >> /etc/rc.conf
+```
+
+</details>
+
+<details>
+  <summary>Initialize the database</summary>
+
+```bash
+service postgresql initdb
 ```
 
 </details>
@@ -78,9 +72,13 @@ echo postgres_enable="yes" >> /etc/rc.conf
 <details>
   <summary>Grafana (v8.3.4+) & Plugins</summary>
 
+(might be obsolete with Grafana 9, I had no issues with a fresh install) The latest Grafana from ports/pkg has a startup issue with the rc script, starting via rc.local is the workaround.
+
 ```bash
-pkg install grafana7
+pkg install grafana9-9.5.7_2
 echo grafana_enable="yes" >> /etc/rc.conf
+# Only needed if grafana fails to start via rc.conf
+echo "cd /tmp && /usr/local/etc/rc.d/grafana onestart" >> /etc/rc.local
 ```
 
 </details>
@@ -96,11 +94,11 @@ echo mosquitto_enable="yes" >> /etc/rc.conf
 </details>
 
 <details>
-  <summary>Node.js (v14+)</summary>
+  <summary>Node.js (v16+)</summary>
 
 ```bash
-pkg install node14
-pkg install npm-node14
+pkg install node
+pkg install npm-node20-10.2.0
 ```
 
 </details>
@@ -112,7 +110,7 @@ The following command will clone the source files for the TeslaMate project. Thi
 ```bash
 cd /usr/local/src
 
-git clone https://github.com/adriankumpf/teslamate.git
+git clone https://github.com/teslamate-org/teslamate.git
 cd teslamate
 
 git checkout $(git describe --tags `git rev-list --tags --max-count=1`) # Checkout the latest stable version
@@ -150,6 +148,7 @@ mix do phx.digest, release --overwrite
 ### Create FreeBSD service definition _/usr/local/etc/rc.d/teslamate_
 
 ```console
+#!/bin/sh
 # PROVIDE: teslamate
 # REQUIRE: DAEMON
 # KEYWORD: teslamate,tesla
@@ -187,6 +186,9 @@ DATABASE_PASS=${teslamate_db_pass}; export DATABASE_PASS
 ENCRYPTION_KEY=${teslamate_encryption_key}; export ENCRYPTION_KEY
 DISABLE_MQTT=${teslamate_mqtt_enable-"FALSE"}; export DISABLE_MQTT
 MQTT_HOST=${teslamate_mqtt_host-"localhost"}; export MQTT_HOST
+# Uncomment if you need these
+#MQTT_USERNAME=${teslamate_mqtt_user-"teslamate"}; export MQTT_USERNAME
+#MQTT_PASSWORD=${teslamate_mqtt_pass-"mqttpassword"}; export MQTT_PASSWORD
 VIRTUAL_HOST=${teslamate_virtual_host-"teslamate.example.com"}; export VIRTUAL_HOST
 
 COMMAND=${teslamate_command-"${HOME}/_build/prod/rel/teslamate/bin/teslamate"}
@@ -201,9 +203,7 @@ start_cmd="${name}_start"
 stop_cmd="${COMMAND} stop"
 status_cmd="${COMMAND} pid"
 
-
 run_rc_command "$1"
-
 ```
 
 ### Update _/etc/rc.conf_
@@ -211,11 +211,11 @@ run_rc_command "$1"
 ```bash
 echo teslamate_enable="YES" >> /etc/rc.conf
 echo teslamate_db_host="localhost"  >> /etc/rc.conf
-echo teslamate_port="5432"  >> /etc/rc.conf
+echo teslamate_db_port="5432"  >> /etc/rc.conf
 echo teslamate_db_pass="<super secret>" >> /etc/rc.conf
 echo teslamate_encryption_key="<super secret encryption key>" >> /etc/rc.conf
 echo teslamate_disable_mqtt="true" >> /etc/rc.conf
-echo teslamate_timezone="<TZ Database>" >> /etc/rc.conf #i.e. Europe/Berlin
+echo teslamate_timezone="<TZ Database>" >> /etc/rc.conf #i.e. Europe/Berlin, America/Los_Angeles
 ```
 
 ### Start service
@@ -227,7 +227,7 @@ service teslamate start
 
 ## Import Grafana Dashboards
 
-1.  Visit [localhost:3000](http://localhost:3000) and log in. The default credentials are: `admin:admin`.
+1.  Visit [localhost:3000](http://localhost:3000) and log in (don't forget to start the service: service grafana start). The default credentials are: `admin:admin`.
 
 2.  Create a data source with the name "TeslaMate":
 
@@ -242,7 +242,7 @@ service teslamate start
     Version: 10
     ```
 
-3.  [Manually import](https://grafana.com/docs/reference/export_import/#importing-a-dashboard) the dashboard [files](https://github.com/adriankumpf/teslamate/tree/master/grafana/dashboards) or use the `dashboards.sh` script:
+3.  [Manually import](https://grafana.com/docs/reference/export_import/#importing-a-dashboard) the dashboard [files](https://github.com/teslamate-org/teslamate/tree/master/grafana/dashboards) or use the `dashboards.sh` script:
 
     ```bash
     $ ./grafana/dashboards.sh restore
